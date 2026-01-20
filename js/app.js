@@ -7,7 +7,7 @@ async function callGAS(action, data = {}) {
     });
     
     try {
-        const response = await fetch(`${WEB_APP_URL}?${params.toString()}`);
+        const response = await fetch(`${API_URL}?${params.toString()}`);
         if (!response.ok) throw new Error('Network response was not ok');
         return await response.json();
     } catch (error) {
