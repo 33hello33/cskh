@@ -1,0 +1,1210 @@
+<!-- Index.html -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý chăm sóc khách hàng</title>
+    <?!= include('CSS'); ?>
+</head>
+<body class="hide-order-columns">
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <div id="user-info" class="user-info-header" style="display: none;">
+                    <span id="current-user-name"></span>
+                    <button class="btn btn-sm btn-secondary" onclick="showChangePasswordModal()" style="background: #6B7280;">
+                        <i class="fas fa-key"></i> Đổi mật khẩu
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="performLogout()">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </button>
+                </div>
+                Quản lý chăm sóc khách hàng
+                <span style="font-size: 14px; font-weight: 400; color: #999; margin-left: 8px;">(Version: 6.0)</span>
+            </h1>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-tab="customers">
+                <i class="fas fa-users"></i> Khách hàng
+            </div>
+            <div class="nav-tab" data-tab="reports">
+                <i class="fas fa-chart-bar"></i> Báo cáo
+            </div>
+            <div class="nav-tab manager-only" data-tab="settings">
+                <i class="fas fa-cog"></i> Cài đặt
+            </div>
+            <div class="nav-tab" data-tab="reminders" style="position: relative;">
+                <i class="fas fa-tasks"></i> Nhắc việc
+                <span id="reminder-tab-badge" class="tab-notification-badge" style="display: none;">0</span>
+            </div>
+            <div class="nav-tab" data-tab="history">
+                <i class="fas fa-history"></i> Lịch sử
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="glass-card">
+            <!-- Customers Section -->
+            <div id="customers" class="content-section active">
+                
+                <div id="status-tabs-container" class="status-tabs-wrapper">
+                    </div>
+
+                <div class="filter-controls">
+                    
+                    <button class="toggle-columns-btn" onclick="toggleOrderColumns()" id="toggle-order-btn">
+                        <i class="fas fa-eye-slash"></i> Ẩn cột
+                    </button>
+                    
+                    <input type="text" 
+                          id="search-input" 
+                          class="form-control search-input" 
+                          placeholder="Tìm kiếm từ khoá...">
+                    
+                    <select id="staff-filter" class="form-control filter-select">
+                        <option value="">Tất cả nhân viên</option>
+                    </select>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <select id="date-filter" class="form-control filter-select">
+                            <option value="all">Tất cả thời gian</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="thisMonth" selected>Tháng này</option>
+                            <option value="lastMonth">Tháng trước</option>
+                            <option value="custom">📅 Tự chọn...</option> 
+                        </select>
+                        
+                        <input type="text" id="custom-date-picker" class="form-control filter-select" 
+                              style="display: none; min-width: 180px; background: #fff;" 
+                              placeholder="Chọn khoảng ngày...">
+                    </div>
+                    
+                    <button class="btn btn-secondary" onclick="resetCustomerFilters()" style="margin-left: 5px; height: 36px;">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <div class="care-needed-filter">
+                        <label class="checkbox-label">
+                            <input type="checkbox" 
+                                  id="care-needed-checkbox" 
+                                  class="care-needed-checkbox">
+                            <span>Cần chăm 7 ngày tới</span>
+                        </label>
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="showAddCustomerModal()">
+                        <i class="fas fa-plus"></i> Thêm
+                    </button>
+                </div>
+
+                <!-- Table View - GIỮ NGUYÊN -->
+                <div id="table-view" class="table-container" style="display: block;">
+                  <table class="data-table">
+                      <thead>
+                        <tr>
+                            <th onclick="sortTable('id')" style="cursor: pointer; width: 50px;">
+                                ID <i class="fas fa-sort" id="sort-id"></i>
+                            </th>
+                            
+                            <th onclick="sortTable('createdDate')" style="cursor: pointer;">
+                                Ngày tạo <i class="fas fa-sort" id="sort-createdDate"></i>
+                            </th>
+                            <th onclick="sortTable('name')" style="cursor: pointer;">
+                                Tên <i class="fas fa-sort" id="sort-name"></i>
+                            </th>
+                            <th onclick="sortTable('phone')" style="cursor: pointer;">
+                                Điện thoại <i class="fas fa-sort" id="sort-phone"></i>
+                            </th>
+                            <th onclick="sortTable('source')" style="cursor: pointer;">
+                                Nguồn <i class="fas fa-sort" id="sort-source"></i>
+                            </th>
+                            <th onclick="sortTable('status')" style="cursor: pointer;">
+                                Trạng thái <i class="fas fa-sort" id="sort-status"></i>
+                            </th>
+                            <th onclick="sortTable('assignedStaff')" style="cursor: pointer;">
+                                Phụ trách <i class="fas fa-sort" id="sort-assignedStaff"></i>
+                            </th>
+                            <th onclick="sortTable('notes')" style="cursor: pointer;">
+                                Ghi chú <i class="fas fa-sort" id="sort-notes"></i>
+                            </th>
+                            <th onclick="sortTable('closedDate')" style="cursor: pointer;" class="order-column">
+                                Ngày chốt gần nhất <i class="fas fa-sort" id="sort-closedDate"></i>
+                            </th>
+                            <th onclick="sortTable('orderCode')" style="cursor: pointer;" class="order-column">
+                                Mã đơn gần nhất <i class="fas fa-sort" id="sort-orderCode"></i>
+                            </th>
+                            <th onclick="sortTable('orderValue')" style="cursor: pointer;">
+                                Doanh thu <i class="fas fa-sort" id="sort-orderValue"></i>
+                            </th>
+                            <th onclick="sortTable('lastContact')" style="cursor: pointer;">
+                                Liên hệ gần nhất <i class="fas fa-sort" id="sort-lastContact"></i>
+                            </th>
+                            <th onclick="sortTable('nextContact')" style="cursor: pointer;">
+                                Ngày liên hệ tiếp <i class="fas fa-sort" id="sort-nextContact"></i>
+                            </th>
+                            <th>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody id="customers-list">
+                          <tr>
+                            <tr>
+                                <td colspan="12" class="loading-cell">
+                                    <div class="loading">Đang tải...</div>
+                                </td>
+                            </tr>
+                          </tr>
+                      </tbody>
+                  </table>
+                </div>
+
+                <!-- Pagination - GIỮ NGUYÊN -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span>Hiển thị <span id="showing-from">1</span>-<span id="showing-to">10</span> trong tổng <span id="total-customers">0</span> khách hàng</span>
+                    </div>
+                    
+                    <div class="pagination-controls">
+                        <div class="items-per-page">
+                            <label for="items-per-page">Số dòng/trang:</label>
+                            <select id="items-per-page" class="form-control">
+                                <option value="10" selected>10</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        
+                        <div class="pagination-buttons">
+                            <button class="btn btn-secondary btn-sm" id="prev-page" onclick="changePage(-1)">
+                                <i class="fas fa-chevron-left"></i> Trước
+                            </button>
+                            <span class="page-info">Trang <span id="current-page">1</span> / <span id="total-pages">1</span></span>
+                            <button class="btn btn-secondary btn-sm" id="next-page" onclick="changePage(1)">
+                                Sau <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reports" class="content-section">
+                <div class="reports-filter-controls">
+                    <div class="date-range-filter">
+                        <label for="report-from-date">Từ ngày:</label>
+                        <input type="date" id="report-from-date" class="form-control">
+                    </div>
+                    <div class="date-range-filter">
+                        <label for="report-to-date">Đến ngày:</label>
+                        <input type="date" id="report-to-date" class="form-control">
+                    </div>
+                    <div class="date-range-filter">
+                        <label for="report-staff-filter">Nhân viên:</label>
+                        <select id="report-staff-filter" class="form-control" onchange="renderReports()">
+                            <option value="">Tất cả nhân viên</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="resetReportDateFilter()">
+                        <i class="fas fa-refresh"></i> Reset
+                    </button>
+                </div>
+                <div class="reports-grid">
+                    <!-- Overview Cards -->
+                    <div class="overview-cards">
+                        <div class="overview-card">
+                            <div class="card-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3 id="total-customers-count">0</h3>
+                                <p>Tổng khách hàng</p>
+                            </div>
+                        </div>
+                        
+                        <div class="overview-card">
+                            <div class="card-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3 id="total-care-count">0</h3>
+                                <p>Tổng doanh thu</p>
+                            </div>
+                        </div>
+                        
+                        <div class="overview-card">
+                            <div class="card-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3 id="today-customers-count">0</h3>
+                                <p>Khách hàng hôm nay</p>
+                            </div>
+                        </div>
+                        
+                        <div class="overview-card">
+                            <div class="card-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3 id="top-staff-name">-</h3>
+                                <p>Nhân viên tích cực nhất</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts - cập nhật thành 6 biểu đồ -->
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-pie"></i> Phân bố theo trạng thái</h3>
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-bar"></i> Khách hàng theo nhân viên</h3>
+                            <canvas id="staffChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-line"></i> Xu hướng theo ngày</h3>
+                            <canvas id="trendChart"></canvas>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3><i class="fas fa-share-alt"></i> Khách hàng theo nguồn</h3>
+                            <canvas id="sourceChart"></canvas>
+                        </div>               
+
+                        <div class="chart-card">
+                            <h3><i class="fas fa-trophy"></i> Top sale chốt</h3>
+                            <canvas id="staffPerformanceChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3><i class="fas fa-calendar-alt"></i> Theo dõi theo tháng</h3>
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3><i class="fas fa-trophy"></i> Top doanh thu theo khách hàng</h3>
+                            <div id="topCustomersList" class="top-list"></div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3><i class="fas fa-money-bill-wave"></i> Doanh thu theo nguồn khách</h3>
+                            <canvas id="sourceRevenueChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3><i class="fas fa-user-tie"></i> Doanh thu theo nhân viên</h3>
+                            <div id="staffRevenueList" class="top-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reminders" class="content-section">
+                <div class="filter-controls" style="margin-bottom: 15px; flex-wrap: wrap;">
+                    
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-weight: 600;">Hạn:</label>
+                        <input type="date" id="remind-filter-date" class="form-control" style="width: auto;" onchange="filterRemindersUI()">
+                    </div>
+
+                    <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 10px;">
+                        <input type="text" id="remind-search-input" class="form-control" style="flex: 1;" placeholder="Tìm việc, người giao..." onkeyup="filterRemindersUI()">
+                        
+                        <button class="btn btn-success" onclick="showAddReminderModal()" style="white-space: nowrap;">
+                            <i class="fas fa-plus"></i> Thêm
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+    
+                    <div class="remind-tabs-container">
+                        <button class="remind-tab-btn active" onclick="switchRemindFilter('pending')" id="tab-pending">
+                            Cần làm <span id="count-pending" class="status-count-badge">0</span>
+                        </button>
+                        <button class="remind-tab-btn" onclick="switchRemindFilter('done')" id="tab-done">
+                            Đã xong <span id="count-done" class="status-count-badge">0</span>
+                        </button>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <span id="remind-showing-info" style="font-size: 13px; color: #666; margin-right: 5px;">0-0 / 0</span>
+                        <button class="btn btn-sm btn-secondary" onclick="changeRemindPage(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <span id="remind-page-info" style="font-size: 13px; font-weight: 600; min-width: 30px; text-align: center;">1/1</span>
+                        <button class="btn btn-sm btn-secondary" onclick="changeRemindPage(1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 100px;">Hạn</th>
+                                    <th style="width: 80px;">Mức độ</th>
+                                    <th>Nội dung công việc</th>
+                                    <th style="width: 150px;">Người gửi</th>
+                                    <th style="width: 150px;">Người nhận</th>
+                                    <th style="width: 100px;">Trạng thái</th>
+                                    <th style="width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reminder-list-container">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="history" class="content-section">
+                <div class="filter-controls" style="margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-weight: 600;">Xem ngày:</label>
+                        <input type="date" id="history-date-filter" class="form-control" style="width: auto;" onchange="loadHistoryLogs()">
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select id="history-action-filter" class="form-control filter-select" onchange="filterHistoryTable()">
+                            <option value="">Tất cả hành động</option>
+                            <option value="Thêm">Thêm</option>
+                            <option value="Sửa">Sửa</option>
+                            <option value="Xóa">Xóa</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select id="history-category-filter" class="form-control filter-select" onchange="filterHistoryTable()">
+                            <option value="">Tất cả phân loại</option>
+                            <option value="Khách hàng">Khách hàng</option>
+                            <option value="Đơn hàng">Đơn hàng</option>
+                            <option value="Lịch sử chăm sóc">Lịch sử chăm sóc</option>
+                        </select>
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 10px;">
+                        <input type="text" id="history-search-input" class="form-control" style="flex: 1;" placeholder="Tìm kiếm trong lịch sử..." onkeyup="filterHistoryTable()">
+                        
+                        <div id="history-pagination-controls" style="display: flex; align-items: center; gap: 5px; background: white; padding: 4px 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                            <span id="hist-showing-info" style="font-size: 13px; color: #666; margin-right: 5px; white-space: nowrap;">
+                                0-0 trong tổng 0
+                            </span>
+
+                            <button class="btn btn-sm btn-secondary" id="hist-prev" onclick="changeHistoryPage(-1)" disabled style="padding: 0 8px; height: 26px; line-height: 1;">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="hist-page-info" style="font-size: 13px; font-weight: 600; min-width: 30px; text-align: center; user-select: none;">
+                                1/1
+                            </span>
+                            <button class="btn btn-sm btn-secondary" id="hist-next" onclick="changeHistoryPage(1)" disabled style="padding: 0 8px; height: 26px; line-height: 1;">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">Giờ</th>
+                                    <th style="width: 150px;">Người làm</th>
+                                    <th style="width: 100px;">Hành động</th>
+                                    <th style="width: 120px;">Phân loại</th>
+                                    <th style="width: 180px;">Khách hàng</th> 
+                                    <th>Chi tiết thay đổi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settings" class="content-section">
+                <div class="settings-grid">
+                    <!-- Staff Management -->
+                    <div class="settings-card">
+                        <h3><i class="fas fa-users"></i> Quản lý nhân viên</h3>
+                        <div id="staff-list" class="settings-list">
+                            <div class="loading">Đang tải...</div>
+                        </div>
+                        <button class="btn btn-success" onclick="addStaff()">
+                            <i class="fas fa-plus"></i> Thêm nhân viên
+                        </button>
+                    </div>
+
+                    <!-- Status Management -->
+                    <div class="settings-card">
+                        <h3><i class="fas fa-chart-pie"></i> Quản lý trạng thái</h3>
+                        <div id="status-list" class="settings-list">
+                            <div class="loading">Đang tải...</div>
+                        </div>
+                        <button class="btn btn-success" onclick="addStatus()">
+                            <i class="fas fa-plus"></i> Thêm trạng thái
+                        </button>
+                    </div>
+
+                    <!-- THÊM MỚI: Source Management -->
+                    <div class="settings-card">
+                        <h3><i class="fas fa-share-alt"></i> Quản lý nguồn khách</h3>
+                        <div id="source-list" class="settings-list">
+                            <div class="loading">Đang tải...</div>
+                        </div>
+                        <button class="btn btn-success" onclick="addSource()">
+                            <i class="fas fa-plus"></i> Thêm nguồn khách
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-lock"></i> Đăng nhập hệ thống
+                </h2>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">TÊN ĐĂNG NHẬP <span class="required-star">*</span></label>
+                    <input type="text" 
+                          id="username" 
+                          name="username" 
+                          class="form-control" 
+                          placeholder="Nhập tên đăng nhập" 
+                          required 
+                          autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">MẬT KHẨU <span class="required-star">*</span></label>
+                    <input type="password" 
+                          id="password" 
+                          name="password" 
+                          class="form-control" 
+                          placeholder="Nhập mật khẩu" 
+                          required 
+                          autocomplete="current-password">
+                </div>
+
+                <div class="d-flex gap-3 justify-content-center mt-4">
+                    <button type="button" class="btn btn-success" onclick="performLogin()">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="customer-modal-title" class="modal-title">Thêm khách hàng mới</h2>
+                <button class="close">&times;</button>
+            </div>
+            <form id="customer-form">
+                <input type="hidden" id="customer-id">
+                
+                <!-- Dòng 1: Ngày tạo - Tên khách hàng - Số điện thoại -->
+                <div class="form-group" style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label for="customer-created-date">Ngày tạo <span class="required-star">*</span></label>
+                        <input type="date" 
+                              id="customer-created-date" 
+                              name="createdDate" 
+                              class="form-control" 
+                              required>
+                    </div>
+                    <div style="flex: 2;">
+                        <label for="customer-name">Tên khách hàng <span class="required-star">*</span></label>
+                        <input type="text" 
+                              id="customer-name" 
+                              name="name" 
+                              class="form-control" 
+                              placeholder="Nhập tên khách hàng" 
+                              required>
+                    </div>
+                    <div style="flex: 1.5;">
+                        <label for="customer-phone">Số điện thoại <span class="required-star">*</span></label>
+                        <input type="tel" 
+                              id="customer-phone" 
+                              name="phone" 
+                              class="form-control" 
+                              placeholder="Nhập số điện thoại"
+                              required>
+                    </div>
+                </div>
+
+                <!-- Dòng 2: Ghi chú -->
+                <div class="form-group">
+                    <label for="customer-notes">Ghi chú</label>
+                    <textarea id="customer-notes" 
+                              name="notes" 
+                              class="form-control" 
+                              rows="2" 
+                              placeholder="Nhập ghi chú"></textarea>
+                </div>
+
+                <!-- Dòng 3: Địa chỉ -->
+                <div class="form-group">
+                    <label for="customer-address">Địa chỉ</label>
+                    <textarea id="customer-address" 
+                              name="address" 
+                              class="form-control" 
+                              rows="1" 
+                              placeholder="Nhập địa chỉ"></textarea>
+                </div>
+
+                <!-- Dòng 4: Trạng thái - Người phụ trách - Nguồn khách -->
+                <div class="form-group" style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label for="customer-status">Trạng thái</label>
+                        <select id="customer-status" 
+                                name="status" 
+                                class="form-control"
+                                onchange="toggleClosedFields()">
+                            <option value="">Chọn trạng thái</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="customer-assigned-staff">Người phụ trách</label>
+                        <select id="customer-assigned-staff" 
+                                name="assignedStaff" 
+                                class="form-control">
+                            <option value="">Chọn nhân viên</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="customer-source">Nguồn khách</label>
+                        <select id="customer-source" 
+                                name="source" 
+                                class="form-control">
+                            <option value="">Chọn nguồn khách</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- THÊM MỚI: Các field chỉ hiện khi status = "Đã chốt" -->
+                <div id="closed-fields" style="display: none;">
+                    <div class="form-group" style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label for="customer-closed-date">Ngày chốt <span class="required-star">*</span></label>
+                            <input type="date" 
+                                  id="customer-closed-date" 
+                                  name="closedDate" 
+                                  class="form-control"
+                                  required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="customer-order-code">Mã đơn hàng</label>
+                            <input type="text" 
+                                  id="customer-order-code" 
+                                  name="orderCode" 
+                                  class="form-control" 
+                                  placeholder="Nhập mã đơn hàng">
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="customer-order-value">Giá trị đơn hàng <span class="required-star">*</span></label>
+                            <input type="text" 
+                                  id="customer-order-value" 
+                                  name="orderValue" 
+                                  class="form-control" 
+                                  placeholder="Nhập giá trị đơn hàng"
+                                  oninput="formatOrderValue(this)"
+                                  required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveCustomer()">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- THÊM MỚI: Source Modal -->
+    <div id="source-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="source-modal-title" class="modal-title">Thêm nguồn khách mới</h2>
+                <button class="close">&times;</button>
+            </div>
+            <form id="source-form">
+                <input type="hidden" id="source-id">
+                
+                <div class="form-group">
+                    <label for="source-name">Tên nguồn khách *</label>
+                    <input type="text" 
+                          id="source-name" 
+                          name="name" 
+                          class="form-control" 
+                          placeholder="Nhập tên nguồn khách" 
+                          required>
+                </div>
+
+                <div class="form-group">
+                    <label for="source-description">Mô tả</label>
+                    <textarea id="source-description" 
+                              name="description" 
+                              class="form-control" 
+                              rows="3" 
+                              placeholder="Nhập mô tả nguồn khách"></textarea>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveSource()">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Detail Modal -->
+    <div id="customer-detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <span id="detail-customer-name"></span>
+                </h2>
+                <button class="close">&times;</button>
+            </div>
+            
+            <div id="detail-customer-info" class="mb-4">
+                <!-- Customer info will be populated here -->
+            </div>
+
+            <h3 class="text-white mb-3"><i class="fas fa-history"></i> Lịch sử chăm sóc</h3>
+            <div id="care-history-list" class="care-history mb-4">
+                <div class="loading">Đang tải...</div>
+            </div>
+
+            <div class="text-center">
+                <button class="btn btn-success" onclick="addCareHistory(currentCustomer?.id)">
+                    <i class="fas fa-plus"></i> Thêm lịch sử chăm sóc
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Care History Modal -->
+    <div id="care-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    Thêm lịch sử chăm sóc - <span id="care-customer-name"></span>
+                </h2>
+                <button class="close">&times;</button>
+            </div>
+            
+            <form id="care-form">
+               <input type="hidden" id="care-entry-id" name="entryId" value="">
+                <div class="form-group">
+                    <label for="care-contact-date">Ngày liên hệ<span class="required-star">*</span></label>
+                    <input type="date" 
+                           id="care-contact-date" 
+                           name="contactDate" 
+                           class="form-control" 
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="care-content">Nội dung chăm sóc <span class="required-star">*</span></label>
+                    <textarea id="care-content" 
+                              name="content" 
+                              class="form-control" 
+                              rows="4" 
+                              placeholder="Mô tả chi tiết cuộc gọi/liên hệ..."
+                              required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="care-next-contact-date">Ngày liên hệ tiếp theo</label>
+                    <input type="date" 
+                           id="care-next-contact-date" 
+                           name="nextContactDate" 
+                           class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="care-staff">Nhân viên thực hiện *</label>
+                    <select id="care-staff" 
+                            name="staff" 
+                            class="form-control" 
+                            required>
+                        <option value="">Chọn nhân viên</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="cancelCareModal()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveCareHistory()">
+                        <i class="fas fa-save"></i> Lưu lịch sử
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-cog"></i> Cài đặt hệ thống</h2>
+                <button class="close">&times;</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
+                <!-- Staff List -->
+                <div>
+                    <h3 class="mb-3"><i class="fas fa-users"></i> Danh sách nhân viên</h3>
+                    <div id="staff-list" class="mb-3">
+                        <div class="loading">Đang tải...</div>
+                    </div>
+                    <button class="btn btn-success btn-sm" onclick="addStaff()">
+                        <i class="fas fa-plus"></i> Thêm nhân viên
+                    </button>
+                </div>
+
+                <!-- Status List -->
+                <div>
+                    <h3 class="mb-3"><i class="fas fa-chart-pie"></i> Danh sách trạng thái</h3>
+                    <div id="status-list" class="mb-3">
+                        <div class="loading">Đang tải...</div>
+                    </div>
+                    <button class="btn btn-success btn-sm" onclick="addStatus()">
+                        <i class="fas fa-plus"></i> Thêm trạng thái
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Modal -->
+    <div id="staff-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="staff-modal-title" class="modal-title">Thêm nhân viên mới</h2>
+                <button class="close">&times;</button>
+            </div>
+            <form id="staff-form">
+                <input type="hidden" id="staff-id">
+                
+                <!-- Dòng 1: Tên nhân viên | Chức vụ -->
+                <div class="form-group" style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label for="staff-name">Tên nhân viên *</label>
+                        <input type="text" 
+                              id="staff-name" 
+                              name="name" 
+                              class="form-control" 
+                              placeholder="Nhập tên nhân viên" 
+                              required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="staff-position">Chức vụ *</label>
+                        <select id="staff-position"
+                                name="position" 
+                                class="form-control" 
+                                required>
+                            <option value="Nhân viên" selected>Nhân viên</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dòng 2: Tên đăng nhập | Mật khẩu -->
+                <div class="form-group" style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label for="staff-username">Tên đăng nhập *</label>
+                        <input type="text" 
+                              id="staff-username" 
+                              name="username" 
+                              class="form-control" 
+                              placeholder="Nhập tên đăng nhập" 
+                              required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="staff-password">Mật khẩu *</label>
+                        <input type="text" 
+                              id="staff-password" 
+                              name="password" 
+                              class="form-control" 
+                              placeholder="Nhập mật khẩu" 
+                              required>
+                    </div>
+                </div>
+
+                <!-- Dòng 3: Người quản lý -->
+                <div class="form-group" id="manager-field" style="display: none;">
+                    <label for="staff-manager">Người quản lý</label>
+                    <select id="staff-manager" name="manager" class="form-control">
+                        <option value="">Không có người quản lý</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveStaff()">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Status Modal -->
+    <div id="status-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="status-modal-title" class="modal-title">Thêm trạng thái mới</h2>
+                <button class="close">&times;</button>
+            </div>
+            <form id="status-form">
+                <input type="hidden" id="status-id">
+                
+                <div class="form-group">
+                    <label for="status-name">Tên trạng thái *</label>
+                    <input type="text" 
+                          id="status-name" 
+                          name="name" 
+                          class="form-control" 
+                          placeholder="Nhập tên trạng thái" 
+                          required>
+                </div>
+
+                <div class="form-group">
+                    <label for="status-color">Màu sắc *</label>
+                    <div class="color-input-container">
+                        <input type="color" 
+                              id="status-color" 
+                              name="color" 
+                              class="color-picker" 
+                              value="#3B82F6" 
+                              required>
+                        <span class="color-text" id="color-text">#3B82F6</span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveStatus()">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Order Modal - THÊM VÀO CUỐI CÁC MODAL KHÁC -->
+    <div id="add-order-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-plus-circle"></i> Thêm đơn hàng mới
+                </h2>
+                <button class="close">&times;</button>
+            </div>
+            
+            <form id="add-order-form">
+                <input type="hidden" id="add-order-customer-id">
+                
+                <div class="form-group">
+                    <label for="add-order-closed-date">Ngày chốt <span class="required-star">*</span></label>
+                    <input type="date" 
+                          id="add-order-closed-date" 
+                          name="closedDate" 
+                          class="form-control" 
+                          required>
+                </div>
+
+                <div class="form-group">
+                    <label for="add-order-code">Mã đơn hàng</label>
+                    <input type="text" 
+                          id="add-order-code" 
+                          name="orderCode" 
+                          class="form-control" 
+                          placeholder="Nhập mã đơn hàng">
+                </div>
+
+                <div class="form-group">
+                    <label for="add-order-value">Giá trị đơn hàng <span class="required-star">*</span></label>
+                    <input type="text" 
+                          id="add-order-value" 
+                          name="orderValue" 
+                          class="form-control" 
+                          placeholder="Nhập giá trị đơn hàng"
+                          oninput="formatOrderValue(this)"
+                          required>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="cancelAddOrder()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveNewOrder()">
+                        <i class="fas fa-save"></i> Lưu đơn hàng
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal - THÊM VÀO CUỐI CÁC MODAL KHÁC -->
+    <div id="edit-order-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-edit"></i> Sửa thông tin đơn hàng
+                </h2>
+                <button class="close">&times;</button>
+            </div>
+            
+            <form id="edit-order-form">
+                <input type="hidden" id="edit-order-customer-id">
+                <input type="hidden" id="edit-order-created-at">
+                
+                <div class="form-group">
+                    <label for="edit-order-closed-date">Ngày chốt <span class="required-star">*</span></label>
+                    <input type="date" 
+                          id="edit-order-closed-date" 
+                          name="closedDate" 
+                          class="form-control" 
+                          required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-order-code">Mã đơn hàng</label>
+                    <input type="text" 
+                          id="edit-order-code" 
+                          name="orderCode" 
+                          class="form-control" 
+                          placeholder="Nhập mã đơn hàng">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-order-value">Giá trị đơn hàng <span class="required-star">*</span></label>
+                    <input type="text" 
+                          id="edit-order-value" 
+                          name="orderValue" 
+                          class="form-control" 
+                          placeholder="Nhập giá trị đơn hàng"
+                          oninput="formatOrderValue(this)"
+                          required>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="cancelEditOrder()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveEditOrder()">
+                        <i class="fas fa-save"></i> Cập nhật
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Info Modal -->
+    <div id="order-info-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-shopping-cart"></i> Thông tin đơn hàng
+                </h2>
+                <button class="close">&times;</button>
+            </div>
+            
+            <form id="order-info-form">
+                <input type="hidden" id="order-customer-id">
+                
+                <div class="form-group">
+                    <label for="order-closed-date">Ngày chốt <span class="required-star">*</span></label>
+                    <input type="date" 
+                          id="order-closed-date" 
+                          name="closedDate" 
+                          class="form-control" 
+                          required>
+                </div>
+
+                <div class="form-group">
+                    <label for="order-code">Mã đơn hàng</label>
+                    <input type="text" 
+                          id="order-code" 
+                          name="orderCode" 
+                          class="form-control" 
+                          placeholder="Nhập mã đơn hàng">
+                </div>
+
+                <div class="form-group">
+                    <label for="order-value">Giá trị đơn hàng <span class="required-star">*</span></label>
+                    <input type="text" 
+                          id="order-value" 
+                          name="orderValue" 
+                          class="form-control" 
+                          placeholder="Nhập giá trị đơn hàng"
+                          oninput="formatOrderValue(this)"
+                          required>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="cancelOrderInfo()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveOrderInfo()">
+                        <i class="fas fa-save"></i> Lưu và chốt đơn
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="reminder-modal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-edit"></i> Chi tiết công việc</h2>
+                <button class="close">&times;</button>
+            </div>
+            <form id="reminder-form">
+                <input type="hidden" id="remind-id">
+                
+                <div class="form-group">
+                    <label>Nội dung công việc *</label>
+                    <textarea id="remind-content" class="form-control" rows="5" required placeholder="Nhập nội dung..."></textarea>
+                </div>
+                
+                <div class="form-group" style="display:flex; gap:15px;">
+                    <div style="flex:1">
+                        <label>Hạn hoàn thành *</label>
+                        <input type="date" id="remind-date" class="form-control" required>
+                    </div>
+                    <div style="flex:1">
+                        <label>Mức độ</label>
+                        <select id="remind-priority" class="form-control">
+                            <option value="Normal">Bình thường</option>
+                            <option value="High">Gấp</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Gửi cho ai? *</label>
+                    <div class="assign-options">
+                        <label><input type="radio" name="assignType" value="all" checked onchange="toggleStaffSelect()"> Tất cả mọi người</label>
+                        <label><input type="radio" name="assignType" value="specific" onchange="toggleStaffSelect()"> Chọn người cụ thể</label>
+                    </div>
+                    
+                    <div id="staff-checklist-container" style="display:none; border:1px solid #eee; padding:10px; max-height:150px; overflow-y:auto; border-radius:4px; margin-top:5px;">
+                        </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+                    <button type="button" class="btn btn-success" onclick="saveReminderToSheet()">Lưu công việc</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="custom-confirm-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-question-circle"></i> <span id="confirm-title">Xác nhận</span>
+                </h2>
+            </div>
+            
+            <div class="modal-body">
+                <p id="confirm-message">Bạn có chắc chắn muốn thực hiện thao tác này?</p>
+            </div>
+            
+            <div class="d-flex gap-3 justify-content-end mt-4">
+                <button class="btn btn-secondary" onclick="closeCustomConfirm(false)">
+                    Hủy
+                </button>
+                <button class="btn btn-success" onclick="closeCustomConfirm(true)">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="change-password-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-key"></i> Đổi mật khẩu
+                </h2>
+                <button class="close">&times;</button>
+            </div>
+            
+            <form id="change-password-form">
+                <div class="form-group">
+                    <label for="new-password">Mật khẩu mới <span class="required-star">*</span></label>
+                    <input type="password" 
+                          id="new-password" 
+                          class="form-control" 
+                          placeholder="Nhập mật khẩu mới"
+                          required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Nhập lại mật khẩu mới <span class="required-star">*</span></label>
+                    <input type="password" 
+                          id="confirm-password" 
+                          class="form-control" 
+                          placeholder="Nhập lại mật khẩu mới"
+                          required>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveNewPassword()">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <?!= include('JavaScript'); ?>
+</body>
+</html>
