@@ -267,7 +267,7 @@ function setupPagination() {
 
 // Load khách hàng
 function loadCustomers() {
-    return await callGAS(,getCustomers,{});
+    return callGAS(getCustomers,{});
 }
 
 // Setup event listeners
