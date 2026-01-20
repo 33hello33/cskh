@@ -1,7 +1,7 @@
 <!-- JavaScript.html -->
 <script>
     
-    const API_URL = "https://script.google.com/macros/s/XXXX/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwxWhakF5WAuz8kQb92N3nZkclhZnI0OROp5kpwZ6RKSS_SI4BaYFpAItGpGdaJQTPKiw/exec";
 
 fetch(API_URL)
   .then(res => res.json())
