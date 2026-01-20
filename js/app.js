@@ -1,5 +1,18 @@
 <!-- JavaScript.html -->
 <script>
+    
+    const API_URL = "https://script.google.com/macros/s/XXXX/exec";
+
+fetch(API_URL)
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("result").innerText =
+      JSON.stringify(data, null, 2);
+  })
+  .catch(err => {
+    document.getElementById("result").innerText = err;
+  });
+
 let customers = [];
 let staff = [];
 let statuses = [];
