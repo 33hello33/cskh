@@ -3343,8 +3343,7 @@ async function deleteSourceConfirm(sourceId) {
     // ------------------------
     
     try {
-        const result = await new Promise((resolve, reject) => {
-           await callGAS(
+        const result = await callGAS(
                 'deleteSource',sourceId);
 
         if (result.success) {
