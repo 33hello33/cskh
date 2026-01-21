@@ -92,7 +92,7 @@ async function initApp() {
         currentSessionId = localStorage.getItem('currentSessionId');
 
 // THAY THẾ google.script.run:
-        const result = await callGAS('getAllData', { sessionId: currentSessionId });
+        const result = await callGAS('getAllData', currentSessionId );
 
         if (!result.success) {
             localStorage.removeItem('currentSessionId');
@@ -161,7 +161,7 @@ async function performLogin() {
     try {
         showButtonLoading('#login-modal .btn-success', 'Đang đăng nhập...');
         
-        const result = await callGAS('login', { username, password });
+        const result = await callGAS('login', username, password );
         
         if (result.success) {
             currentUser = result.user;
