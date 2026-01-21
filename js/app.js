@@ -1,26 +1,22 @@
-    const API_URL = "https://script.google.com/macros/s/AKfycbxq5F8-Vrdf_vESgan85HyfwmXw9bBcjFtr1beeuvQLL1TUAWYvseSsDuDP30Mv-a_T9g/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxq5F8-Vrdf_vESgan85HyfwmXw9bBcjFtr1beeuvQLL1TUAWYvseSsDuDP30Mv-a_T9g/exec";
 
-async function callGAS(action, data = {}) {
-    const params = new URLSearchParams({
-        action: action,
-        data: JSON.stringify(data)
-    });
-    
+async function callGAS(functionName, ...args) {
     try {
-        const response = await fetch(`${API_URL}?${params.toString()}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        return await response.json();
+        const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                method: functionName,
+                parameters: args
+            })
+        });
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+        return result;
     } catch (error) {
-        console.error(`Lỗi khi gọi action ${action}:`, error);
+        console.error(`Lỗi API (${functionName}):`, error);
         throw error;
     }
 }
-
-// --- KHỞI TẠO ỨNG DỤNG ---
-document.addEventListener('DOMContentLoaded', function() {
-    initApp();
-    setupEventListeners();
-});
 
 let customers = [];
 let staff = [];
@@ -84,7 +80,12 @@ const commonLegendConfig = {
     }
 };
 
-// Khởi tạo dữ liệu
+// --- KHỞI TẠO ỨNG DỤNG ---
+document.addEventListener('DOMContentLoaded', function() {
+    initApp();
+    setupEventListeners();
+});
+
 async function initApp() {
     try {
         document.getElementById('login-modal').style.display = 'none';
@@ -189,7 +190,7 @@ async function performLogout() {
     try {
         showButtonLoading('#user-info .btn-secondary', 'Đang thoát...');
         
-        await callGAS('logout', {currentSessionId});
+        await callGAS('logout', currentSessionId);
         
         currentUser = null;
         currentSessionId = null;
@@ -1740,12 +1741,9 @@ async function deleteOrderInDetail(orderId, customerId, btn) {
     }
 
     try {
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .deleteOrderFromCustomer(customerId, orderId, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
-        });
+        const result = await callGAS(
+                'deleteOrderFromCustomer', customerId, orderId, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
+        
         if (result.success) {
             showNotification('Xóa đơn hàng thành công!');
             await refreshData();
@@ -1784,12 +1782,9 @@ function editOrderInForm(orderId, customerId) {
 async function deleteOrderInForm(orderId, customerId) {
     if (!(await showCustomConfirm('Bạn có chắc muốn xóa đơn hàng này?'))) return;
     try {
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .deleteOrderFromCustomer(customerId, orderId, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
-        });
+        const result = await callGAS(
+                'deleteOrderFromCustomer', customerId, orderId, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
+
         if (result.success) {
             showNotification('Xóa đơn hàng thành công!');
             await refreshData();
@@ -1835,12 +1830,9 @@ async function saveEditOrder() {
             orderCode: orderCode,
             orderValue: orderValue
         };
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .updateOrderOfCustomer(parseInt(customerId), parseInt(orderId), orderData, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
-        });
+        const result = await callGAS(
+                'updateOrderOfCustomer',parseInt(customerId), parseInt(orderId), orderData, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
+
         if (result.success) {
             hideButtonLoading('#edit-order-modal .btn-success');
             showNotification('Cập nhật đơn hàng thành công!');
@@ -1924,22 +1916,12 @@ window.saveCustomer = async function() {
     
     try {
         showButtonLoading('#customer-modal .d-flex .btn-success', 'Đang lưu...');
-        let result;
-        if (customerId) {
-            result = await new Promise((resolve, reject) => {
-                google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)
-                    .updateCustomer(parseInt(customerId), customerData);
-            });
-        } else {
-            result = await new Promise((resolve, reject) => {
-                google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)
-                    .addCustomer(customerData);
-            });
-        }
+       const result = customerId 
+            ? await callGAS('updateCustomer', parseInt(customerId), customerData)
+            : await callGAS('addCustomer', customerData);
         
         if (result.success) {
-            hideButtonLoading('#customer-modal .d-flex .btn-success');
-            showNotification(customerId ? 'Cập nhật thành công!' : 'Thêm mới thành công!');
+            showNotification('Thành công!');
             closeModal();
             
             // Vẽ lại dữ liệu và giao diện
@@ -1985,10 +1967,11 @@ window.deleteCustomer = async function(customerId, btn) {
     // ---------------------------------
 
     try {
-        const result = await new Promise((resolve, reject) => {
-            google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)
-                .deleteCustomer(customerId, currentUser ? currentUser.name : 'Unknown');
-        });
+        const result = await callGAS(
+        'deleteCustomer', 
+        customerId, 
+        currentUser ? currentUser.name : 'Unknown'
+    );
 
         if (result.success) {
             showNotification('Xóa khách hàng thành công!');
@@ -2189,12 +2172,9 @@ async function saveNewOrder() {
             orderValue: orderValue,
             createdAt: new Date().toISOString()
         };
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .addOrderToCustomer(parseInt(customerId), newOrder, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
-        });
+        const result = await callGAS(
+                'addOrderToCustomer',parseInt(customerId), newOrder, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
+
         if (result.success) {
             hideButtonLoading('#add-order-modal .btn-success');
             showNotification('Thêm đơn hàng thành công!');
@@ -2290,12 +2270,9 @@ async function deleteCareHistory(entryId, btn) {
     }
     
     try {
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .deleteCareHistory(currentCustomer.id, entryId, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
-        });
+        const result = await callGAS(
+                deleteCareHistory, currentCustomer.id, entryId, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
+
         if (result.success) {
             showNotification('Xóa lịch sử chăm sóc thành công!');
             await refreshData();
@@ -2401,19 +2378,11 @@ async function saveCareHistory() {
         let result;
         
         if (entryId && entryId.trim() !== '') {
-            result = await new Promise((resolve, reject) => {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                    .updateCareHistory(currentCustomer.id, parseInt(entryId), careData, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
-            });
+            result =await callGAS(
+                    'updateCareHistory', currentCustomer.id, parseInt(entryId), careData, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
         } else {
-            result = await new Promise((resolve, reject) => {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                    .addCareHistory(currentCustomer.id, careData, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
-            });
+            result = await callGAS(
+                    'addCareHistory', currentCustomer.id, careData, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
         }
         
         if (result.success) {
@@ -2560,13 +2529,8 @@ function renderSettingsContent() {
 // Thêm function di chuyển trạng thái
 async function moveStatus(statusId, direction) {
     try {
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .reorderStatus(statusId, direction);
-        });
-        
+        const result = await callGAS(
+                'reorderStatus',statusId, direction);
         if (result.success) {
             showNotification(`Di chuyển trạng thái thành công!`);
             await refreshData();
@@ -2746,19 +2710,11 @@ async function saveStaff() {
         
         let result;
         if (staffId) {
-            result = await new Promise((resolve, reject) => {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                    .updateStaff(parseInt(staffId), staffData);
-            });
+            result = await callGAS(
+                    'updateStaff', parseInt(staffId), staffData);
         } else {
-            result = await new Promise((resolve, reject) => {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                    .addStaff(staffData);
-            });
+            result = await callGAS(
+                    'addStaff',staffData);
         }
         
         if (result.success) {
@@ -2810,12 +2766,8 @@ async function deleteStaffConfirm(staffId) {
     // -----------------------------------------------------------------------
     
     try {
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .deleteStaff(staffId);
-        });
+        const result = await callGAS(
+                'deleteStaff', staffId);
 
         if (result.success) {
             showNotification('Xóa nhân viên thành công!');
@@ -2922,19 +2874,11 @@ async function saveStatus() {
         
         let result;
         if (statusId) {
-            result = await new Promise((resolve, reject) => {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                    .updateStatus(parseInt(statusId), statusData);
-            });
+            result = await callGAS(
+                    'updateStatus', parseInt(statusId), statusData);
         } else {
-            result = await new Promise((resolve, reject) => {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                    .addStatus(statusData);
-            });
+            result = await callGAS(
+                    'addStatus',statusData);
         }
         
         if (result.success) {
@@ -2977,12 +2921,8 @@ async function deleteStatusConfirm(statusId) {
     // ------------------------
     
     try {
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .deleteStatus(statusId);
-        });
+        const result = await callGAS(
+                'deleteStatus', statusId);
 
         if (result.success) {
             showNotification('Xóa trạng thái thành công!');
@@ -3228,12 +3168,8 @@ async function changeCustomerStatus(customerId, newStatus) {
         const customerData = { ...customer };
         customerData._editorName = currentUser ? currentUser.name : 'Unknown';
 
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .updateCustomer(customerId, customerData);
-        });
+        const result = await callGAS(
+                'updateCustomer',customerId, customerData);
 
         if (result.success) {
             showNotification(`Chuyển trạng thái thành công từ "${oldStatusDisplay}" sang "${newStatusDisplay}"!`);
@@ -3258,12 +3194,8 @@ async function changeCustomerStatus(customerId, newStatus) {
 
 async function refreshData() {
     try {
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .getAllData(currentSessionId);
-        });
+        const result = await callGAS(
+                'getAllData',currentSessionId);
 
         if (result.success) {
             currentUser = result.user;
@@ -3369,19 +3301,11 @@ async function saveSource() {
         
         let result;
         if (sourceId) {
-            result = await new Promise((resolve, reject) => {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                    .updateSource(parseInt(sourceId), sourceData);
-            });
+            result = await callGAS(
+                    'updateSource',parseInt(sourceId), sourceData);
         } else {
-            result = await new Promise((resolve, reject) => {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                    .addSource(sourceData);
-            });
+            result = await callGAS(
+                    'addSource'sourceData);
         }
         
         if (result.success) {
@@ -3420,11 +3344,8 @@ async function deleteSourceConfirm(sourceId) {
     
     try {
         const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .deleteSource(sourceId);
-        });
+           await callGAS(
+                'deleteSource',sourceId);
 
         if (result.success) {
             showNotification('Xóa nguồn khách thành công!');
@@ -3600,12 +3521,8 @@ async function updateCustomerStatusDirect(customerId, newStatus, oldStatus) {
         const customerData = { ...customer };
         customerData._editorName = currentUser ? currentUser.name : 'Unknown';
 
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .updateCustomer(customerId, customerData);
-        });
+        const result = await callGAS(
+                'updateCustomer',customerId, customerData);
 
         if (!result.success) {
             // Rollback nếu lỗi
@@ -3718,13 +3635,9 @@ async function saveOrderInfo() {
         
         pendingListStatusChange = null;
         // Gọi API sau
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .updateCustomer(parseInt(customerId), updatedCustomerData);
-        });
-        
+        const result = await callGAS(
+                'updateCustomer',parseInt(customerId), updatedCustomerData);
+
         if (result.success) {
             // Cập nhật currentCustomer và các view khác
             currentCustomer = customer;
@@ -4028,12 +3941,8 @@ async function saveNewPassword() {
     try {
         showButtonLoading('#change-password-modal .btn-success', 'Đang lưu...');
         
-        const result = await new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .changePassword(currentUser.username, newPassword);
-        });
+        const result = await callGAS(
+                'changePassword',currentUser.username, newPassword);
         
         if (result.success) {
             hideButtonLoading('#change-password-modal .btn-success');
@@ -4591,10 +4500,8 @@ async function saveReminderToSheet() {
 
     showButtonLoading('#reminder-modal .btn-success', 'Đang lưu...');
     try {
-        await new Promise((resolve, reject) => {
-            google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).saveReminder(data);
-        });
-        
+        await callGAS('saveReminder',data);
+
         closeModal();
         showNotification('Đã lưu công việc!');
         await refreshData(); // Load lại để lấy ID mới và cập nhật list
@@ -4632,9 +4539,7 @@ async function toggleReminderStatus(id, date, newStatus) {
     }
 
     // 3. Gửi xuống Server lưu lại
-    google.script.run.withSuccessHandler(() => {
-        // Lưu thành công (không cần làm gì thêm vì đã cập nhật UI rồi)
-    }).updateReminderStatus(id, date, newStatus, false);
+    await callGAS('updateReminderStatus',id, date, newStatus, false);
 }
 
 async function deleteReminder(id, date) {
@@ -4655,10 +4560,8 @@ async function deleteReminder(id, date) {
     
     // 3. Gửi lệnh xóa xuống Server
     try {
-        await new Promise((resolve, reject) => {
-            google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)
-                .updateReminderStatus(id, date, false, true); // true = tham số isDelete
-        });
+        await callGAS(
+                'updateReminderStatus', id, date, false, true); // true = tham số isDelete
         showNotification("Đã xóa công việc!");
     } catch(e) {
         // Nếu lỗi thì hoàn tác lại dữ liệu cũ
