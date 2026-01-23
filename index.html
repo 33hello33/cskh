@@ -4,16 +4,14 @@
 <head>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý chăm sóc khách hàng</title>
+    <title>Quản lý trung tâm</title>
+    <?!= include('CSS'); ?>
 </head>
 <body class="hide-order-columns">
-        <script src="js/app.js"></script>
     <div class="container">
         <!-- Header -->
         <div class="header">
@@ -27,7 +25,7 @@
                         <i class="fas fa-sign-out-alt"></i> Đăng xuất
                     </button>
                 </div>
-                Quản lý chăm sóc khách hàng
+                Quản lý trung tâm
                 <span style="font-size: 14px; font-weight: 400; color: #999; margin-left: 8px;">(Version: 6.0)</span>
             </h1>
         </div>
@@ -35,7 +33,7 @@
         <!-- Navigation -->
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="customers">
-                <i class="fas fa-users"></i> Khách hàng
+                <i class="fas fa-users"></i> Học viên
             </div>
             <div class="nav-tab" data-tab="reports">
                 <i class="fas fa-chart-bar"></i> Báo cáo
@@ -169,7 +167,7 @@
                 <!-- Pagination - GIỮ NGUYÊN -->
                 <div class="pagination-container">
                     <div class="pagination-info">
-                        <span>Hiển thị <span id="showing-from">1</span>-<span id="showing-to">10</span> trong tổng <span id="total-customers">0</span> khách hàng</span>
+                        <span>Hiển thị <span id="showing-from">1</span>-<span id="showing-to">10</span> trong tổng <span id="total-customers">0</span> học viên</span>
                     </div>
                     
                     <div class="pagination-controls">
@@ -227,7 +225,7 @@
                             </div>
                             <div class="card-content">
                                 <h3 id="total-customers-count">0</h3>
-                                <p>Tổng khách hàng</p>
+                                <p>Tổng học viên</p>
                             </div>
                         </div>
                         
@@ -247,7 +245,7 @@
                             </div>
                             <div class="card-content">
                                 <h3 id="today-customers-count">0</h3>
-                                <p>Khách hàng hôm nay</p>
+                                <p>Học viên mới tháng này</p>
                             </div>
                         </div>
                         
@@ -265,47 +263,47 @@
                     <!-- Charts - cập nhật thành 6 biểu đồ -->
                     <div class="charts-container">
                         <div class="chart-card">
-                            <h3><i class="fas fa-chart-pie"></i> Phân bố theo trạng thái</h3>
+                            <h3><i class="fas fa-chart-pie"></i> Cơ cấu doanh thu, chi phí trong tháng</h3>
                             <canvas id="statusChart"></canvas>
                         </div>
                         
                         <div class="chart-card">
-                            <h3><i class="fas fa-chart-bar"></i> Khách hàng theo nhân viên</h3>
+                            <h3><i class="fas fa-chart-bar"></i> Biểu đồ tăng trưởng doanh thu các tháng</h3>
                             <canvas id="staffChart"></canvas>
                         </div>
                         
                         <div class="chart-card">
-                            <h3><i class="fas fa-chart-line"></i> Xu hướng theo ngày</h3>
+                            <h3><i class="fas fa-chart-line"></i> Biểu đồ tăng trưởng lợi nhuận các tháng</h3>
                             <canvas id="trendChart"></canvas>
                         </div>
 
                         <div class="chart-card">
-                            <h3><i class="fas fa-share-alt"></i> Khách hàng theo nguồn</h3>
+                            <h3><i class="fas fa-share-alt"></i> Tăng trưởng học viên các tháng</h3>
                             <canvas id="sourceChart"></canvas>
                         </div>               
 
                         <div class="chart-card">
-                            <h3><i class="fas fa-trophy"></i> Top sale chốt</h3>
+                            <h3><i class="fas fa-trophy"></i> Cơ cấu doanh thu theo lớp</h3>
                             <canvas id="staffPerformanceChart"></canvas>
                         </div>
                         
                         <div class="chart-card">
-                            <h3><i class="fas fa-calendar-alt"></i> Theo dõi theo tháng</h3>
+                            <h3><i class="fas fa-calendar-alt"></i> Thống kê nợ theo lớp</h3>
                             <canvas id="monthlyChart"></canvas>
                         </div>
 
                         <div class="chart-card">
-                            <h3><i class="fas fa-trophy"></i> Top doanh thu theo khách hàng</h3>
+                            <h3><i class="fas fa-trophy"></i> Tổng công nợ trong tháng</h3>
                             <div id="topCustomersList" class="top-list"></div>
                         </div>
                         
                         <div class="chart-card">
-                            <h3><i class="fas fa-money-bill-wave"></i> Doanh thu theo nguồn khách</h3>
+                            <h3><i class="fas fa-money-bill-wave"></i> Báo cáo sĩ số học sinh từng lớp</h3>
                             <canvas id="sourceRevenueChart"></canvas>
                         </div>
                         
                         <div class="chart-card">
-                            <h3><i class="fas fa-user-tie"></i> Doanh thu theo nhân viên</h3>
+                            <h3><i class="fas fa-user-tie"></i> Cơ cấu nhân viên</h3>
                             <div id="staffRevenueList" class="top-list"></div>
                         </div>
                     </div>
@@ -937,7 +935,7 @@
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
                 <h2 class="modal-title">
-                    <i class="fas fa-plus-circle"></i> Thêm đơn hàng mới
+                    <i class="fas fa-plus-circle"></i> Thêm hóa đơn mới
                 </h2>
                 <button class="close">&times;</button>
             </div>
@@ -955,21 +953,21 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="add-order-code">Mã đơn hàng</label>
+                    <label for="add-order-code">Mã hóa đơn</label>
                     <input type="text" 
                           id="add-order-code" 
                           name="orderCode" 
                           class="form-control" 
-                          placeholder="Nhập mã đơn hàng">
+                          placeholder="Nhập mã hóa đơn">
                 </div>
 
                 <div class="form-group">
-                    <label for="add-order-value">Giá trị đơn hàng <span class="required-star">*</span></label>
+                    <label for="add-order-value">Giá trị hóa đơn <span class="required-star">*</span></label>
                     <input type="text" 
                           id="add-order-value" 
                           name="orderValue" 
                           class="form-control" 
-                          placeholder="Nhập giá trị đơn hàng"
+                          placeholder="Nhập giá trị hóa đơn"
                           oninput="formatOrderValue(this)"
                           required>
                 </div>
@@ -979,7 +977,7 @@
                         Hủy
                     </button>
                     <button type="button" class="btn btn-success" onclick="saveNewOrder()">
-                        <i class="fas fa-save"></i> Lưu đơn hàng
+                        <i class="fas fa-save"></i> Lưu hóa đơn
                     </button>
                 </div>
             </form>
@@ -991,7 +989,7 @@
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
                 <h2 class="modal-title">
-                    <i class="fas fa-edit"></i> Sửa thông tin đơn hàng
+                    <i class="fas fa-edit"></i> Sửa thông tin hóa đơn
                 </h2>
                 <button class="close">&times;</button>
             </div>
@@ -1010,21 +1008,21 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="edit-order-code">Mã đơn hàng</label>
+                    <label for="edit-order-code">Mã hóa đơn</label>
                     <input type="text" 
                           id="edit-order-code" 
                           name="orderCode" 
                           class="form-control" 
-                          placeholder="Nhập mã đơn hàng">
+                          placeholder="Nhập mã hóa đơn">
                 </div>
 
                 <div class="form-group">
-                    <label for="edit-order-value">Giá trị đơn hàng <span class="required-star">*</span></label>
+                    <label for="edit-order-value">Giá trị hóa đơn <span class="required-star">*</span></label>
                     <input type="text" 
                           id="edit-order-value" 
                           name="orderValue" 
                           class="form-control" 
-                          placeholder="Nhập giá trị đơn hàng"
+                          placeholder="Nhập giá trị hóa đơn"
                           oninput="formatOrderValue(this)"
                           required>
                 </div>
@@ -1046,7 +1044,7 @@
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
                 <h2 class="modal-title">
-                    <i class="fas fa-shopping-cart"></i> Thông tin đơn hàng
+                    <i class="fas fa-shopping-cart"></i> Thông tin học phí
                 </h2>
                 <button class="close">&times;</button>
             </div>
@@ -1064,21 +1062,21 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="order-code">Mã đơn hàng</label>
+                    <label for="order-code">Mã hóa đơn</label>
                     <input type="text" 
                           id="order-code" 
                           name="orderCode" 
                           class="form-control" 
-                          placeholder="Nhập mã đơn hàng">
+                          placeholder="Nhập mã đơn">
                 </div>
 
                 <div class="form-group">
-                    <label for="order-value">Giá trị đơn hàng <span class="required-star">*</span></label>
+                    <label for="order-value">Giá trị hóa đơn <span class="required-star">*</span></label>
                     <input type="text" 
                           id="order-value" 
                           name="orderValue" 
                           class="form-control" 
-                          placeholder="Nhập giá trị đơn hàng"
+                          placeholder="Nhập giá trị hóa đơn"
                           oninput="formatOrderValue(this)"
                           required>
                 </div>
@@ -1206,5 +1204,7 @@
             </form>
         </div>
     </div>
+
+    <?!= include('JavaScript'); ?>
 </body>
 </html>
