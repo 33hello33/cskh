@@ -1,4 +1,4 @@
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKruyChnJh8PRhrtcTlYt8GHYkLXJsjVXyspjWgTZy9yOHpKebcsPW-a5dJZgNdXZG6A/exec";
+   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKruyChnJh8PRhrtcTlYt8GHYkLXJsjVXyspjWgTZy9yOHpKebcsPW-a5dJZgNdXZG6A/exec";
 
 async function callGAS(functionName, ...args) {
     try {
@@ -100,13 +100,13 @@ async function initApp() {
             showLoginModal();
             return;
         }
-        
+
         currentUser = result.user;
         staff = result.staff;
         statuses = result.statuses;
         sources = result.sources;
         customers = result.customers;
-        
+
         window.allHistoryData = result.history || [];
         window.reminders = result.reminders || [];
         renderReminders();
@@ -139,7 +139,7 @@ async function initApp() {
              loadHistoryLogs();
         }
         // --------------------------------------------------------
-        
+
     } catch (error) {
         console.error('Lỗi khởi tạo:', error);
         localStorage.removeItem('currentSessionId');
@@ -152,31 +152,31 @@ async function initApp() {
 async function performLogin() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
-    
+
     if (!username || !password) {
         alert('Vui lòng nhập đầy đủ thông tin');
         return;
     }
-    
+
     try {
         showButtonLoading('#login-modal .btn-success', 'Đang đăng nhập...');
-        
+
         const result = await callGAS('login', username, password );
-        
+
         if (result.success) {
             currentUser = result.user;
             currentSessionId = result.sessionId;
-            
+
             // Lưu sessionId vào localStorage
             localStorage.setItem('currentSessionId', currentSessionId);
-            
+
             hideLoginModal();
             showUserInfo();
             initApp(); // Reload app with user permissions
         } else {
             showNotification(result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Lỗi đăng nhập:', error);
         showNotification('Có lỗi xảy ra khi đăng nhập', 'error');
@@ -189,9 +189,9 @@ async function performLogin() {
 async function performLogout() {
     try {
         showButtonLoading('#user-info .btn-secondary', 'Đang thoát...');
-        
+
         await callGAS('logout', currentSessionId);
-        
+
         currentUser = null;
         currentSessionId = null;
         customers = [];
@@ -199,16 +199,16 @@ async function performLogout() {
 
         window.reminders = []; // Xóa dữ liệu trong biến
         document.getElementById('reminder-list-container').innerHTML = ''; // Xóa giao diện
-        
+
         // Xóa sessionId khỏi localStorage
         localStorage.removeItem('currentSessionId');
-        
+
         showLoginModal();
         hideUserInfo();
-        
+
         // Clear form
         document.getElementById('login-form').reset();
-        
+
     } catch (error) {
         console.error('Lỗi đăng xuất:', error);
     } finally {
@@ -237,7 +237,7 @@ function showUserInfo() {
         // Chỉ hiện tên, không hiện chức vụ
         document.getElementById('current-user-name').textContent = currentUser.name;
         document.getElementById('user-info').style.display = 'flex';
-        
+
         // Add manager class if user is manager
         if (currentUser.isManager) {
             document.body.classList.add('manager-user');
@@ -279,7 +279,7 @@ function setupEventListeners() {
             switchTab(this.dataset.tab);
         });
     });
-    
+
     // Search functionality - KHÔI PHỤC PHẦN NÀY
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
@@ -287,24 +287,24 @@ function setupEventListeners() {
             filterCustomers();
         }, 300));
     }
-    
+
     // Filter functionality
     const statusFilter = document.getElementById('status-filter');
     const staffFilter = document.getElementById('staff-filter');
     const todayFilterCheckbox = document.getElementById('today-filter');
-    
+
     if (statusFilter) {
         statusFilter.addEventListener('change', function() {
             filterCustomers();
         });
     }
-    
+
     if (staffFilter) {
         staffFilter.addEventListener('change', function() {
             filterCustomers();
         });
     }
-    
+
     // Thêm event listener cho today filter
     const dateFilterSelect = document.getElementById('date-filter');
     if (dateFilterSelect) {
@@ -322,7 +322,7 @@ function setupEventListeners() {
             filterCustomers();
         });
     }
-        
+
     // Modal close functionality
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('close')) {
@@ -335,14 +335,14 @@ function setupEventListeners() {
             loadHistoryLogs();
         }
     });
-    
+
     // Escape key to close modal
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeModal();
         }
     });
-    
+
     // Color picker change event
     document.addEventListener('change', function(e) {
         if (e.target.id === 'status-color') {
@@ -376,30 +376,30 @@ function loadHistoryLogs() {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
     const selectedDate = dateInput.value;
-    
+
     // Lấy dữ liệu từ biến toàn cục
     const allLogs = window.allHistoryData || [];
-    
+
     // LỌC NGAY TẠI TRÌNH DUYỆT: Theo ngày VÀ Theo quyền hạn
     currentHistoryLogs = allLogs.filter(log => {
         const matchDate = log.fullDate === selectedDate;
-        
+
         // Logic mới: Nếu là Manager -> Xem hết (true), Nếu nhân viên -> Chỉ xem dòng của mình
         const matchUser = currentUser.isManager ? true : (log.u === currentUser.name);
-        
+
         return matchDate && matchUser;
     });
 
     // Reset tìm kiếm và trang
     const searchInput = document.getElementById('history-search-input');
     if (searchInput) searchInput.value = '';
-    
+
     // Mặc định filtered logs bằng toàn bộ logs đã lọc quyền
     historyFilteredLogs = [...currentHistoryLogs];
-    
+
     historyCurrentPage = 1;
     // Reset về trang 1
-    
+
     // Render
     renderHistoryTable();
 }
@@ -407,10 +407,10 @@ function loadHistoryLogs() {
 // Thêm function để check ngày hôm nay
 function isToday(dateString) {
     if (!dateString) return false;
-    
+
     const today = new Date();
     const checkDate = new Date(dateString);
-    
+
     return today.getFullYear() === checkDate.getFullYear() &&
            today.getMonth() === checkDate.getMonth() &&
            today.getDate() === checkDate.getDate();
@@ -422,7 +422,7 @@ function renderReports() {
     if (!reportFromDate || !reportToDate) {
         initializeReportDateRange();
     }
-    
+
     renderOverviewCards();
     renderStatusChart();
     renderStaffStackedChart();
@@ -439,11 +439,11 @@ function renderReports() {
 function renderOverviewCards() {
     const filteredCustomers = getFilteredCustomers('created');
     const totalCustomers = filteredCustomers.length;
-    
+
     // UPDATED: Tính tổng doanh thu từ orders array trong khoảng thời gian
     let totalRevenue = 0;
     let closedCount = 0;
-    
+
     filteredCustomers.forEach(customer => {
         if (customer.orders && customer.orders.length > 0) {
             customer.orders.forEach(order => {
@@ -454,9 +454,9 @@ function renderOverviewCards() {
             });
         }
     });
-    
+
     const todayCustomers = filteredCustomers.filter(customer => isToday(customer.createdDate)).length;
-    
+
     // Tìm nhân viên chăm sóc nhiều nhất trong khoảng thời gian
     const staffCareCount = {};
     filteredCustomers.forEach(customer => {
@@ -468,16 +468,16 @@ function renderOverviewCards() {
             });
         }
     });
-    
+
     const topStaff = Object.keys(staffCareCount).reduce((a, b) => 
         staffCareCount[a] > staffCareCount[b] ? a : b, '-');
-    
+
     document.getElementById('total-customers-count').textContent = totalCustomers;
-    
+
     // UPDATED: Hiển thị doanh thu và số đơn hàng
     document.getElementById('total-care-count').textContent = 
         `${new Intl.NumberFormat('vi-VN').format(totalRevenue)} (${closedCount} đơn)`;
-    
+
     document.getElementById('today-customers-count').textContent = todayCustomers;
     document.getElementById('top-staff-name').textContent = topStaff;
 }
@@ -514,39 +514,39 @@ function generateChartColors(itemCount) {
         '#8B5CF6', '#EF4444', '#06B6D4', '#84CC16',
         '#F97316', '#EAB308', '#14B8A6', '#8B5CF6'
     ];
-    
+
     const colors = [...statusColors];
-    
+
     // Nếu không đủ màu, thêm từ fallback
     while (colors.length < itemCount) {
         const fallbackIndex = colors.length % fallbackColors.length;
         colors.push(fallbackColors[fallbackIndex]);
     }
-    
+
     return colors.slice(0, itemCount);
 }
 
 // Render status chart
 function renderStatusChart() {
     const ctx = document.getElementById('statusChart').getContext('2d');
-    
+
     if (statusChart) {
         statusChart.destroy();
     }
-    
+
     const filteredCustomers = getFilteredCustomers('created');
     const statusCount = {};
     filteredCustomers.forEach(customer => {
         const status = customer.status || 'Chưa xác định';
         statusCount[status] = (statusCount[status] || 0) + 1;
     });
-    
+
     const statusNames = Object.keys(statusCount);
     const statusColors = statusNames.map(name => {
         if (name === 'Chưa xác định') return '#6B7280';
         return getStatusColor(name);
     });
-    
+
     statusChart = new Chart(ctx, {
         type: 'pie',
         data: {
@@ -571,24 +571,24 @@ function renderStatusChart() {
 // Render staff chart
 function renderStaffStackedChart() {
     const ctx = document.getElementById('staffChart').getContext('2d');
-    
+
     if (staffChart) {
         staffChart.destroy();
     }
-    
+
     const filteredCustomers = getFilteredCustomers('created');
-    
+
     // Tạo dữ liệu cho stacked chart
     const staffData = {};
     const statusList = statuses.map(s => s.name);
-    
+
     // THÊM: Lọc staff theo quyền
     let staffToShow = staff;
     if (currentUser && !currentUser.isManager) {
         // Nếu là nhân viên, chỉ hiển thị nhân viên hiện tại
         staffToShow = staff.filter(s => s.name === currentUser.name);
     }
-    
+
     // Khởi tạo dữ liệu cho mỗi nhân viên (đã lọc)
     staffToShow.forEach(s => {
         staffData[s.name] = {};
@@ -597,7 +597,7 @@ function renderStaffStackedChart() {
         });
         staffData[s.name]['Chưa xác định'] = 0;
     });
-    
+
     // Chỉ thêm "Chưa phân công" nếu là manager
     if (!currentUser || currentUser.isManager) {
         staffData['Chưa phân công'] = {};
@@ -606,24 +606,24 @@ function renderStaffStackedChart() {
         });
         staffData['Chưa phân công']['Chưa xác định'] = 0;
     }
-    
+
     // Đếm khách hàng từ filtered customers
     filteredCustomers.forEach(customer => {
         const assignedStaff = customer.assignedStaff || 'Chưa phân công';
         const status = customer.status || 'Chưa xác định';
-        
+
         if (staffData[assignedStaff]) {
             staffData[assignedStaff][status]++;
         }
     });
-    
+
     // Phần còn lại giữ nguyên...
     const staffNames = Object.keys(staffData);
     const allStatuses = [...statusList, 'Chưa xác định'];
-    
+
     const datasets = allStatuses.map((status, index) => {
         const color = status === 'Chưa xác định' ? '#6B7280' : getStatusColor(status);
-        
+
         return {
             label: status,
             data: staffNames.map(staff => staffData[staff][status]),
@@ -632,7 +632,7 @@ function renderStaffStackedChart() {
             borderWidth: 1
         };
     });
-    
+
     staffChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -668,74 +668,80 @@ function renderStaffStackedChart() {
 
 function renderStaffPerformanceChart() {
     const ctx = document.getElementById('staffPerformanceChart').getContext('2d');
-    
+
     if (staffPerformanceChart) {
         staffPerformanceChart.destroy();
     }
-    
-    const filteredCustomers = getFilteredCustomers('created');
-    const sourceData = {};
 
-    // Khởi tạo dữ liệu cho từng nguồn có sẵn
-    sources.forEach(s => {
-        sourceData[s.name] = {
-            totalRevenue: 0,
-            customerCount: 0
+    // THAY ĐỔI: Sử dụng filtered customers
+    const filteredCustomers = getFilteredCustomers('created');
+
+    // Tính toán số khách hàng đã chốt theo nhân viên
+    const staffSales = {};
+
+    staff.forEach(s => {
+        staffSales[s.name] = {
+            totalCustomers: 0,
+            closedCustomers: 0,
+            closeRate: 0
         };
     });
 
-    // Tính toán doanh thu và số khách theo nguồn
+    // THAY ĐỔI: Dùng filtered customers
     filteredCustomers.forEach(customer => {
-        const source = customer.source || 'Chưa xác định';
-        
-        if (!sourceData[source]) {
-            sourceData[source] = { totalRevenue: 0, customerCount: 0 };
-        }
+        const assignedStaff = customer.assignedStaff;
+        if (assignedStaff && staffSales[assignedStaff]) {
+            staffSales[assignedStaff].totalCustomers++;
 
-        sourceData[source].customerCount++;
-
-        // Tính tổng doanh thu từ các đơn hàng của khách hàng này
-        if (customer.orders && customer.orders.length > 0) {
-            customer.orders.forEach(order => {
-                // Kiểm tra nếu đơn hàng đã đóng và nằm trong khoảng thời gian lọc
-                if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
-                    sourceData[source].totalRevenue += (order.orderValue || 0);
-                }
-            });
+            // Kiểm tra các trạng thái "đã chốt" - bạn có thể tùy chỉnh
+            const closedStatuses = ['Đã chốt', 'Closed', 'Thành công', 'Đã mua'];
+            if (customer.status && closedStatuses.includes(customer.status)) {
+                staffSales[assignedStaff].closedCustomers++;
+            }
         }
     });
-    
-    const sourceNames = Object.keys(sourceData);
-    const revenueData = sourceNames.map(name => sourceData[name].totalRevenue);
-    const customerCountData = sourceNames.map(name => sourceData[name].customerCount);
-    
+
+    // Phần còn lại giữ nguyên...
+    Object.keys(staffSales).forEach(staffName => {
+        const data = staffSales[staffName];
+        if (data.totalCustomers > 0) {
+            data.closeRate = ((data.closedCustomers / data.totalCustomers) * 100).toFixed(1);
+        }
+    });
+
+    const staffNames = Object.keys(staffSales);
+    const closedData = staffNames.map(name => staffSales[name].closedCustomers);
+    const closeRateData = staffNames.map(name => staffSales[name].closeRate);
+
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
-    const accentColor = '#F59E0B'; // Màu cam cho số lượng khách
-    
+    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
+
     staffPerformanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: sourceNames,
+            labels: staffNames,
             datasets: [
                 {
-                    type: 'bar',
-                    label: 'Doanh thu (VNĐ)',
-                    data: revenueData,
-                    backgroundColor: primaryColor,
-                    borderColor: primaryColor,
-                    borderWidth: 1,
+                    type: 'line',
+                    label: 'Tỷ lệ chốt (%)',
+                    data: closeRateData,
+                    borderColor: successColor,
+                    backgroundColor: successColor,
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: successColor,
+                    pointBorderColor: successColor,
+                    pointRadius: 5,
                     yAxisID: 'y'
                 },
                 {
-                    type: 'line',
-                    label: 'Số lượng khách hàng',
-                    data: customerCountData,
-                    borderColor: accentColor,
-                    backgroundColor: accentColor,
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.3,
-                    pointRadius: 4,
+                    type: 'bar',
+                    label: 'Số khách hàng đã chốt',
+                    data: closedData,
+                    backgroundColor: primaryColor,
+                    borderColor: primaryColor,
+                    borderWidth: 1,
                     yAxisID: 'y1'
                 }
             ]
@@ -748,21 +754,7 @@ function renderStaffPerformanceChart() {
                 intersect: false,
             },
             plugins: {
-                legend: commonLegendConfig,
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) label += ': ';
-                            if (context.datasetIndex === 0) {
-                                label += new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
-                            } else {
-                                label += context.raw + ' khách';
-                            }
-                            return label;
-                        }
-                    }
-                }
+                legend: commonLegendConfig
             },
             scales: {
                 y: {
@@ -772,7 +764,10 @@ function renderStaffPerformanceChart() {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Doanh thu (VNĐ)'
+                        text: 'Tỷ lệ chốt (%)',
+                        font: {
+                            size: 11
+                        }
                     }
                 },
                 y1: {
@@ -782,10 +777,16 @@ function renderStaffPerformanceChart() {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Số lượng khách'
+                        text: 'Số KH đã chốt',
+                        font: {
+                            size: 11
+                        }
                     },
                     grid: {
                         drawOnChartArea: false,
+                    },
+                    ticks: {
+                        stepSize: 1
                     }
                 }
             }
@@ -797,15 +798,15 @@ function renderStaffPerformanceChart() {
 function renderMonthlyChart() {
     const ctx = document.getElementById('monthlyChart').getContext('2d');
     const filteredCustomers = getFilteredCustomers('created');
-    
+
     if (monthlyChart) {
         monthlyChart.destroy();
     }
-    
+
     // Tạo dữ liệu theo tháng
     const monthlyData = {};
     const currentDate = new Date();
-    
+
     // Tạo 12 tháng gần nhất
     for (let i = 11; i >= 0; i--) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
@@ -815,7 +816,7 @@ function renderMonthlyChart() {
             closedOrders: 0 // UPDATED: Đếm số đơn hàng thay vì số khách hàng
         };
     }
-    
+
     // Đếm khách hàng mới theo tháng
     filteredCustomers.forEach(customer => {
         if (customer.createdDate) {
@@ -825,7 +826,7 @@ function renderMonthlyChart() {
                 monthlyData[monthKey].newCustomers++;
             }
         }
-        
+
         // UPDATED: Đếm đơn hàng đã chốt theo tháng
         if (customer.orders && customer.orders.length > 0) {
             customer.orders.forEach(order => {
@@ -839,16 +840,16 @@ function renderMonthlyChart() {
             });
         }
     });
-    
+
     const months = Object.keys(monthlyData);
     const monthLabels = months.map(month => {
         const [year, monthNum] = month.split('-');
         return `${monthNum}/${year}`;
     });
-    
+
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
     const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
-    
+
     monthlyChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -920,22 +921,22 @@ function renderMonthlyChart() {
 function renderTrendChart() {
     const ctx = document.getElementById('trendChart').getContext('2d');
     const filteredCustomers = getFilteredCustomers('created');
-    
+
     if (trendChart) {
         trendChart.destroy();
     }
-    
+
     // Group customers by created date
     const dateCount = {};
     const closedOrderCount = {}; // UPDATED: Đếm đơn hàng thay vì khách hàng
-    
+
     filteredCustomers.forEach(customer => {
         // Đếm khách hàng mới theo ngày tạo
         if (customer.createdDate) {
             const date = customer.createdDate;
             dateCount[date] = (dateCount[date] || 0) + 1;
         }
-        
+
         // UPDATED: Đếm đơn hàng đã chốt theo ngày chốt
         if (customer.orders && customer.orders.length > 0) {
             customer.orders.forEach(order => {
@@ -946,15 +947,15 @@ function renderTrendChart() {
             });
         }
     });
-    
+
     // Lấy tất cả các ngày và sort
     const allDates = new Set([...Object.keys(dateCount), ...Object.keys(closedOrderCount)]);
     const sortedDates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b));
     const last10Dates = sortedDates.slice(-10);
-    
+
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
     const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
-    
+
     trendChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1009,15 +1010,15 @@ function renderTrendChart() {
 // BIỂU ĐỒ MỚI 1: Khách hàng theo nguồn
 function renderSourceChart() {
     const ctx = document.getElementById('sourceChart').getContext('2d');
-    
+
     if (sourceChart) {
         sourceChart.destroy();
     }
-    
+
     const filteredCustomers = getFilteredCustomers('created');
-    
+
     const sourceData = {};
-    
+
     // Khởi tạo dữ liệu cho tất cả nguồn khách
     sources.forEach(source => {
         sourceData[source.name] = {
@@ -1026,7 +1027,7 @@ function renderSourceChart() {
         };
     });
     sourceData['Chưa xác định'] = { total: 0, closed: 0 };
-    
+
     // Đếm khách hàng từ filtered customers
     filteredCustomers.forEach(customer => {
         const source = customer.source || 'Chưa xác định';
@@ -1037,11 +1038,11 @@ function renderSourceChart() {
             }
         }
     });
-    
+
     const sourceNames = Object.keys(sourceData);
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
     const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
-    
+
     sourceChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1091,20 +1092,33 @@ function renderSourceChart() {
 // BIỂU ĐỒ MỚI 2: Doanh thu theo nguồn khách
 function renderSourceRevenueChart() {
     const ctx = document.getElementById('sourceRevenueChart').getContext('2d');
-    
+
     if (sourceRevenueChart) {
         sourceRevenueChart.destroy();
     }
-    
+
+    const sourceRevenue = {};
     const sourceCustomerCount = {}; // Đổi tên biến để phản ánh đúng mục đích (thống kê số khách)
-    
+
     // Khởi tạo dữ liệu
     sources.forEach(source => {
+        sourceRevenue[source.name] = 0;
         sourceCustomerCount[source.name] = 0;
     });
-    
+    sourceRevenue['Chưa xác định'] = 0;
+
+    // UPDATED: Tính doanh thu từ orders array trong khoảng thời gian
     // Thống kê số lượng khách hàng theo nguồn
     getFilteredCustomers('created').forEach(customer => {
+        if (customer.orders && customer.orders.length > 0) {
+            customer.orders.forEach(order => {
+                if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
+                    const source = customer.source || 'Chưa xác định';
+                    if (sourceRevenue[source] !== undefined) {
+                        sourceRevenue[source] += order.orderValue || 0;
+                    }
+                }
+            });
         const source = customer.source || 'Chưa xác định';
         
         // Nếu nguồn chưa có trong đối tượng khởi tạo, tạo mới nó
@@ -1115,15 +1129,17 @@ function renderSourceRevenueChart() {
         // Tăng biến đếm thêm 1 cho mỗi khách hàng
         sourceCustomerCount[source] += 1;
     });
-    
+
+    const sourceNames = Object.keys(sourceRevenue);
     const sourceNames = Object.keys(sourceCustomerCount);
     const colors = generateChartColors(sourceNames.length);
-    
+
     sourceRevenueChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: sourceNames,
             datasets: [{
+                data: Object.values(sourceRevenue),
                 label: 'Số lượng khách hàng', // Nhãn cho dataset
                 data: Object.values(sourceCustomerCount),
                 backgroundColor: colors,
@@ -1140,6 +1156,7 @@ function renderSourceRevenueChart() {
                     callbacks: {
                         label: function(context) {
                             const value = context.raw;
+                            return context.label + ': ' + new Intl.NumberFormat('vi-VN').format(value);
                             // Hiển thị định dạng số nguyên cho số lượng khách
                             return context.label + ': ' + value + ' khách hàng';
                         }
@@ -1153,18 +1170,18 @@ function renderSourceRevenueChart() {
 // BIỂU ĐỒ MỚI 3: Doanh thu theo nhân viên
 function renderStaffRevenueChart() {
     const staffRevenue = {};
-    
+
     // THÊM: Lọc staff theo quyền
     let staffToShow = staff;
     if (currentUser && !currentUser.isManager) {
         staffToShow = staff.filter(s => s.name === currentUser.name);
     }
-    
+
     // Khởi tạo dữ liệu cho staff được phép hiển thị
     staffToShow.forEach(s => {
         staffRevenue[s.name] = 0;
     });
-    
+
     // UPDATED: Tính doanh thu từ orders array trong khoảng thời gian
     getFilteredCustomers('created').forEach(customer => {
         if (customer.assignedStaff && customer.orders && customer.orders.length > 0) {
@@ -1177,12 +1194,12 @@ function renderStaffRevenueChart() {
             });
         }
     });
-    
+
     const staffRevenueArray = Object.keys(staffRevenue).map(name => ({
         name: name,
         revenue: staffRevenue[name]
     })).sort((a, b) => b.revenue - a.revenue);
-    
+
     const html = staffRevenueArray.map((staff, index) => `
         <div class="top-item">
             <div class="top-item-info">
@@ -1192,7 +1209,7 @@ function renderStaffRevenueChart() {
             <span class="top-item-count">${staff.revenue > 0 ? new Intl.NumberFormat('vi-VN').format(staff.revenue) : '0'}</span>
         </div>
     `).join('');
-    
+
     document.getElementById('staffRevenueList').innerHTML = html || 
         '<p class="text-muted text-center">Chưa có dữ liệu doanh thu</p>';
 }
@@ -1203,24 +1220,24 @@ function refreshChartsAfterStatusChange() {
     if (reportsTab && reportsTab.classList.contains('active')) {
         renderReports();
     }
-    
+
     updateStatusStyles();
-    
+
     // MỚI: Render lại tabs để cập nhật màu sắc/thứ tự
     renderStatusTabs();
-    
+
     renderCustomers();
 }
 
 function hexToRgba(hex, opacity = 0.1) {
     // Remove # if present
     hex = hex.replace('#', '');
-    
+
     // Parse r, g, b values
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
-    
+
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
@@ -1230,24 +1247,24 @@ function switchTab(tabName) {
     document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.classList.remove('active');
     });
-    
+
     document.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
     });
-    
+
     // Add active class to clicked tab and corresponding section
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     document.getElementById(tabName).classList.add('active');
-    
+
     if (tabName === 'settings') {
         renderSettingsContent();
     }
-    
+
     // Render reports khi chuyển sang tab reports
     if (tabName === 'reports') {
         renderReports();
     }
-    
+
     if (tabName === 'customers') {
         updateStatusStyles();
     }
@@ -1263,7 +1280,7 @@ function renderTopCustomersByRevenue() {
     // Tính tổng doanh thu cho mỗi khách hàng từ orders trong khoảng thời gian
     const customerRevenue = getFilteredCustomers('created').map(customer => {
         let totalRevenue = 0;
-        
+
         if (customer.orders && customer.orders.length > 0) {
             customer.orders.forEach(order => {
                 if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
@@ -1271,7 +1288,7 @@ function renderTopCustomersByRevenue() {
                 }
             });
         }
-        
+
         return {
             ...customer,
             revenue: totalRevenue
@@ -1280,7 +1297,7 @@ function renderTopCustomersByRevenue() {
     .filter(customer => customer.revenue > 0)
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 10);
-    
+
     const html = customerRevenue.map((customer, index) => `
         <div class="top-item">
             <div class="top-item-info">
@@ -1290,7 +1307,7 @@ function renderTopCustomersByRevenue() {
             <span class="top-item-count">${new Intl.NumberFormat('vi-VN').format(customer.revenue)}</span>
         </div>
     `).join('');
-    
+
     document.getElementById('topCustomersList').innerHTML = html || 
         '<p class="text-muted text-center">Chưa có dữ liệu doanh thu</p>';
 }
@@ -1298,18 +1315,18 @@ function renderTopCustomersByRevenue() {
 // Render customers
 function renderCustomers() {
     updateStatusStyles();
-    
+
     const container = document.getElementById('customers-list');
     if (!container) return;
-    
+
     const totalItems = filteredCustomers.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
     const pageCustomers = filteredCustomers.slice(startIndex, endIndex);
-    
+
     updatePaginationInfo(totalItems, startIndex + 1, endIndex, totalPages);
-    
+
     if (pageCustomers.length === 0) {
         container.innerHTML = `
             <tr>
@@ -1322,12 +1339,12 @@ function renderCustomers() {
         `;
         return;
     }
-    
+
     const customersHtml = pageCustomers.map(customer => {
         const statusClass = getStatusClass(customer.status);
         const lastCare = customer.careHistory && customer.careHistory.length > 0 ? customer.careHistory[0] : null;
         const nextContactDate = lastCare && lastCare.nextContactDate ? formatDate(lastCare.nextContactDate) : '┄';
-        
+
         const careCount = customer.careHistory ? customer.careHistory.length : 0;
         let careCountBadge = '';
         if (careCount > 0) {
@@ -1336,7 +1353,7 @@ function renderCustomers() {
             else if (careCount >= 3) badgeClass = 'care-count-medium';
             careCountBadge = `<span class="care-count-badge ${badgeClass}">${careCount}</span>`;
         }
-        
+
         let orderInfo = { closedDate: '┄', orderCode: '┄', totalValue: 0, orderCount: 0 };
         if (customer.orders && customer.orders.length > 0) {
             const latestOrder = customer.orders.sort((a, b) => new Date(b.closedDate) - new Date(a.closedDate))[0];
@@ -1345,7 +1362,7 @@ function renderCustomers() {
             orderInfo.totalValue = customer.orders.reduce((sum, order) => sum + (order.orderValue || 0), 0);
             orderInfo.orderCount = customer.orders.length;
         }
-        
+
         const orderValueFormatted = orderInfo.totalValue > 0 ? new Intl.NumberFormat('vi-VN').format(orderInfo.totalValue) : '┄';
         let orderValueBadge = '';
         if (orderInfo.orderCount > 1) {
@@ -1355,7 +1372,7 @@ function renderCustomers() {
 
         const canEdit = currentUser.isManager || customer.assignedStaff === currentUser.name;
         const canDelete = currentUser.isManager || customer.assignedStaff === currentUser.name;
-        
+
         return `
             <tr>
                 <td>${customer.id}</td>
@@ -1403,7 +1420,7 @@ function renderCustomers() {
             </tr>
         `;
     }).join('');
-    
+
     container.innerHTML = customersHtml;
 }
 
@@ -1414,11 +1431,11 @@ function updatePaginationInfo(total, from, to, totalPages) {
     document.getElementById('showing-to').textContent = to;
     document.getElementById('current-page').textContent = currentPage;
     document.getElementById('total-pages').textContent = totalPages;
-    
+
     // Enable/disable buttons
     const prevBtn = document.getElementById('prev-page');
     const nextBtn = document.getElementById('next-page');
-    
+
     if (prevBtn) prevBtn.disabled = currentPage <= 1;
     if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
 }
@@ -1426,25 +1443,25 @@ function updatePaginationInfo(total, from, to, totalPages) {
 // Thêm function change page
 function changePage(direction) {
     const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
-    
+
     if (direction === -1 && currentPage > 1) {
         currentPage--;
     } else if (direction === 1 && currentPage < totalPages) {
         currentPage++;
     }
-    
+
     renderCustomers();
 }
 
 // Filter customers
 function filterCustomers() {
     const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
-    
+
     // THAY ĐỔI: Lấy status từ biến global tab đang chọn
     const statusFilter = currentStatusTab; 
-    
+
     const staffFilter = document.getElementById('staff-filter')?.value || '';
-    
+
     filteredCustomers = customers.filter(customer => {
         const matchesSearch = !searchTerm || [
             `KH${customer.id}`,       // ID
@@ -1458,7 +1475,7 @@ function filterCustomers() {
             customer.orderCode,       // Mã đơn hàng
             customer.email            // Email
         ].some(val => val && String(val).toLowerCase().includes(searchTerm));
-            
+
         // Logic so sánh status
         let matchesStatus = true;
         if (statusFilter) {
@@ -1468,21 +1485,21 @@ function filterCustomers() {
                 matchesStatus = customer.status === statusFilter;
             }
         }
-        
+
         const matchesStaff = !staffFilter || customer.assignedStaff === staffFilter;
         const matchesDate = checkDateFilter(customer.createdDate, dateFilter);
         const matchesCareNeeded = !careNeededFilter || needsCareInNext7Days(customer);
 
         return matchesSearch && matchesStatus && matchesStaff && matchesDate && matchesCareNeeded;
     });
-    
+
     if (currentSort.field) {
         sortTable(currentSort.field, true);
     } else {
         currentPage = 1;
         renderCustomers();
     }
-    
+
     renderStatusTabs(); 
 }
 
@@ -1490,7 +1507,7 @@ function checkDateFilter(dateString, filter) {
     if (filter === 'all' || !dateString) return true;
     const customerDate = new Date(dateString);
     const today = new Date();
-    
+
     switch(filter) {
         case 'today':
             return isToday(dateString);
@@ -1501,7 +1518,7 @@ function checkDateFilter(dateString, filter) {
             const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
             return customerDate.getFullYear() === lastMonth.getFullYear() &&
                    customerDate.getMonth() === lastMonth.getMonth();
-        
+
         // --- THÊM CASE NÀY ---
         case 'custom':
             if (!customStartDate || !customEndDate) return true;
@@ -1535,16 +1552,16 @@ function populateDropdowns() {
         select.innerHTML = '<option value="">Chọn nguồn khách</option>' +
             sources.map(source => `<option value="${source.name}">${source.name}</option>`).join('');
     });
-    
+
     // ĐÃ XOÁ: Phần populate cho status-filter
-    
+
     // Staff filter (Vẫn giữ)
     const staffFilter = document.getElementById('staff-filter');
     if (staffFilter) {
         staffFilter.innerHTML = '<option value="">Tất cả nhân viên</option>' +
             staff.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
     }
-    
+
     // Care history staff dropdown (Vẫn giữ)
     const careStaffSelect = document.getElementById('care-staff');
     if (careStaffSelect) {
@@ -1563,11 +1580,11 @@ function populateDropdowns() {
 function showAddCustomerModal() {
     document.getElementById('customer-form').reset();
     document.getElementById('customer-id').value = '';
-    
+
     // Set ngày tạo mặc định là hôm nay
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('customer-created-date').value = today;
-    
+
     // RESET closed fields về trạng thái ban đầu
     const closedFields = document.getElementById('closed-fields');
     closedFields.innerHTML = `
@@ -1601,15 +1618,15 @@ function showAddCustomerModal() {
         </div>
     `;
     closedFields.style.display = 'none'; // Ẩn mặc định
-    
+
     document.getElementById('customer-modal-title').textContent = 'Thêm khách hàng mới';
     populateDropdowns();
-    
+
     // Đợi populate xong rồi mới set default values
     setTimeout(() => {
         const assignedStaffSelect = document.querySelector('select[name="assignedStaff"]');
         const statusSelect = document.querySelector('select[name="status"]');
-        
+
         // RESET field state (fix bug khi chuyển đổi tài khoản)
         if (assignedStaffSelect) {
             assignedStaffSelect.disabled = false;
@@ -1617,7 +1634,7 @@ function showAddCustomerModal() {
             assignedStaffSelect.style.cursor = 'pointer';
             assignedStaffSelect.title = '';
         }
-        
+
         // SET DEFAULT VALUES
         if (currentUser) {
             if (currentUser.isManager) {
@@ -1633,14 +1650,14 @@ function showAddCustomerModal() {
                 }
             }
         }
-        
+
         // SET DEFAULT STATUS = "Khách hàng mới"
         if (statusSelect) {
             statusSelect.value = 'Khách hàng mới';
         }
-        
+
     }, 100);
-    
+
     showModal('customer-modal');
 }
 
@@ -1649,7 +1666,7 @@ function showAddCustomerModal() {
 function editCustomer(customerId) {
     const customer = customers.find(c => c.id == customerId);
     if (!customer) return;
-    
+
     document.getElementById('customer-id').value = customer.id;
     document.getElementById('customer-created-date').value = formatDateForInput(customer.createdDate);
     document.getElementById('customer-name').value = customer.name;
@@ -1657,7 +1674,7 @@ function editCustomer(customerId) {
     document.getElementById('customer-notes').value = customer.notes || '';
     document.getElementById('customer-address').value = customer.address || '';
     document.getElementById('customer-source').value = customer.source || '';
-    
+
     // UPDATED: Sử dụng index thay vì createdAt
     const closedFields = document.getElementById('closed-fields');
     if (customer.orders && customer.orders.length > 0) {
@@ -1679,7 +1696,7 @@ function editCustomer(customerId) {
                     </div>
                 </div>
             `).join('');
-            
+
         closedFields.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h4 style="margin: 0; color: var(--primary);">Danh sách đơn hàng (${customer.orders.length}):</h4>
@@ -1701,7 +1718,7 @@ function editCustomer(customerId) {
         `;
         closedFields.style.display = 'block';
     }
-    
+
     setTimeout(() => {
         document.querySelector('select[name="status"]').value = customer.status || '';
         document.querySelector('select[name="assignedStaff"]').value = customer.assignedStaff || '';
@@ -1717,16 +1734,16 @@ function editCustomer(customerId) {
 function editOrderInDetail(orderId, customerId) {
     const customer = customers.find(c => c.id == customerId);
     const order = customer.orders.find(o => o.id == orderId);
-    
+
     // THÊM DÒNG NÀY - set parent modal
     parentModal = 'customer-detail-modal';
-    
+
     document.getElementById('edit-order-customer-id').value = customerId;
     document.getElementById('edit-order-created-at').value = order.id;
     document.getElementById('edit-order-closed-date').value = formatDateForInput(order.closedDate);
     document.getElementById('edit-order-code').value = order.orderCode || '';
     document.getElementById('edit-order-value').value = order.orderValue ? order.orderValue.toLocaleString('vi-VN') : '';
-    
+
     document.getElementById('customer-detail-modal').classList.remove('show');
     showModal('edit-order-modal');
 }
@@ -1742,7 +1759,7 @@ async function deleteOrderInDetail(orderId, customerId, btn) {
     try {
         const result = await callGAS(
                 'deleteOrderFromCustomer', customerId, orderId, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
-        
+
         if (result.success) {
             showNotification('Xóa đơn hàng thành công!');
             await refreshData();
@@ -1766,13 +1783,13 @@ function editOrderInForm(orderId, customerId) {
     parentModal = 'customer-modal';
     const customer = customers.find(c => c.id == customerId);
     const order = customer.orders.find(o => o.id == orderId); // SỬA: find thay vì [orderId]
-    
+
     document.getElementById('edit-order-customer-id').value = customerId;
     document.getElementById('edit-order-created-at').value = order.id;
     document.getElementById('edit-order-closed-date').value = formatDateForInput(order.closedDate);
     document.getElementById('edit-order-code').value = order.orderCode || '';
     document.getElementById('edit-order-value').value = order.orderValue ? order.orderValue.toLocaleString('vi-VN') : '';
-    
+
     document.getElementById('customer-modal').classList.remove('show');
     showModal('edit-order-modal');
 }
@@ -1803,7 +1820,7 @@ function showAddOrderInFormModal(customerId) {
     document.getElementById('add-order-form').reset();
     document.getElementById('add-order-customer-id').value = customerId;
     document.getElementById('add-order-closed-date').value = new Date().toISOString().split('T')[0];
-    
+
     document.getElementById('customer-modal').classList.remove('show');
     showModal('add-order-modal');
 }
@@ -1816,12 +1833,12 @@ async function saveEditOrder() {
     const closedDate = document.getElementById('edit-order-closed-date').value;
     const orderCode = document.getElementById('edit-order-code').value.trim();
     const orderValue = parseOrderValue(document.getElementById('edit-order-value').value);
-    
+
     if (!closedDate || !orderValue) {
         alert('Vui lòng nhập đầy đủ thông tin');
         return;
     }
-    
+
     try {
         showButtonLoading('#edit-order-modal .btn-success', 'Đang lưu...');
         const orderData = {
@@ -1836,7 +1853,7 @@ async function saveEditOrder() {
             hideButtonLoading('#edit-order-modal .btn-success');
             showNotification('Cập nhật đơn hàng thành công!');
             closeModal();
-            
+
             await refreshData();
             currentCustomer = customers.find(c => c.id == customerId);
             // Kiểm tra modal nào đang mở để refresh đúng
@@ -1859,7 +1876,7 @@ async function saveEditOrder() {
 // Cancel edit order - quay về modal trước đó
 function cancelEditOrder() {
     document.getElementById('edit-order-modal').classList.remove('show');
-    
+
     if (parentModal && document.getElementById(parentModal)) {
         document.getElementById(parentModal).classList.add('show');
     } else {
@@ -1869,7 +1886,7 @@ function cancelEditOrder() {
 
 function cancelAddOrder() {
     document.getElementById('add-order-modal').classList.remove('show');
-    
+
     if (parentModal && document.getElementById(parentModal)) {
         document.getElementById(parentModal).classList.add('show');
     } else {
@@ -1881,7 +1898,7 @@ function cancelAddOrder() {
 window.saveCustomer = async function() {
     const form = document.getElementById('customer-form');
     const customerId = document.getElementById('customer-id').value;
-    
+
     // Lấy thông tin form cơ bản
     const customerData = {
         createdDate: document.getElementById('customer-created-date').value,
@@ -1892,7 +1909,7 @@ window.saveCustomer = async function() {
         status: document.querySelector('select[name="status"]').value,
         assignedStaff: document.querySelector('select[name="assignedStaff"]').value,
         source: document.querySelector('select[name="source"]').value,
-        
+
         // QUAN TRỌNG: Truyền tên người đang đăng nhập để ghi log
         _editorName: currentUser ? currentUser.name : 'Unknown' 
     };
@@ -1907,22 +1924,22 @@ window.saveCustomer = async function() {
             return;
         }
     }
-    
+
     if (!customerData.name || !customerData.createdDate || !customerData.phone) {
         showCustomAlert('Vui lòng nhập đầy đủ thông tin bắt buộc', 'error');
         return;
     }
-    
+
     try {
         showButtonLoading('#customer-modal .d-flex .btn-success', 'Đang lưu...');
        const result = customerId 
             ? await callGAS('updateCustomer', parseInt(customerId), customerData)
             : await callGAS('addCustomer', customerData);
-        
+
         if (result.success) {
             showNotification('Thành công!');
             closeModal();
-            
+
             // Vẽ lại dữ liệu và giao diện
             await refreshData();
             // Đảm bảo update lại các Tab thống kê
@@ -1952,11 +1969,11 @@ function isStatusInUse(statusName) {
 window.deleteCustomer = async function(customerId, btn) {
     const customer = customers.find(c => c.id == customerId);
     if (!customer) return;
-    
+
     if (!(await showCustomConfirm(`Bạn có chắc muốn xóa khách hàng "KH${customer.id} - ${customer.name}"?`, 'Xóa khách hàng'))) {
         return;
     }
-    
+
     // --- BẮT ĐẦU: Hiệu ứng Loading ---
     const originalIcon = btn ? btn.innerHTML : '';
     if (btn) { 
@@ -1992,13 +2009,13 @@ window.deleteCustomer = async function(customerId, btn) {
 function viewCustomerDetails(customerId) {
     const customer = customers.find(c => c.id == customerId);
     if (!customer) return;
-    
+
     currentCustomer = customer;
-    
+
     const totalOrderValue = (customer.orders || []).reduce((sum, o) => sum + (o.orderValue || 0), 0);
     const orderCount = customer.orders ? customer.orders.length : 0;
     const careCount = customer.careHistory ? customer.careHistory.length : 0;
-    
+
     // Render Đơn hàng
     let ordersHtml = '<p class="text-muted text-center" style="font-size:12px; margin:0; padding:5px;">Chưa có đơn hàng</p>';
     if (customer.orders && customer.orders.length > 0) {
@@ -2124,7 +2141,7 @@ function viewCustomerDetails(customerId) {
             </div>
         </div>
     `;
-    
+
     // Inject nội dung không dùng wrapper padding để sticky header hoạt động
     const modalContentContainer = document.querySelector('#customer-detail-modal .modal-content');
     modalContentContainer.innerHTML = modalContent;
@@ -2138,11 +2155,11 @@ function showAddOrderModal(customerId) {
     parentModal = 'customer-detail-modal'; // Track modal cha
     document.getElementById('add-order-form').reset();
     document.getElementById('add-order-customer-id').value = customerId;
-    
+
     // Set default date to today
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('add-order-closed-date').value = today;
-    
+
     // Ẩn customer detail modal trước
     document.getElementById('customer-detail-modal').classList.remove('show');
     showModal('add-order-modal');
@@ -2154,12 +2171,12 @@ async function saveNewOrder() {
     const closedDate = document.getElementById('add-order-closed-date').value;
     const orderCode = document.getElementById('add-order-code').value.trim();
     const orderValue = parseOrderValue(document.getElementById('add-order-value').value);
-    
+
     if (!closedDate || !orderValue) {
         alert('Vui lòng nhập đầy đủ Ngày chốt và Giá trị đơn hàng');
         return;
     }
-    
+
     const customer = customers.find(c => c.id == customerId);
     if (!customer) return;
     try {
@@ -2178,7 +2195,7 @@ async function saveNewOrder() {
             hideButtonLoading('#add-order-modal .btn-success');
             showNotification('Thêm đơn hàng thành công!');
             closeModal();
-            
+
             await refreshData();
             currentCustomer = customers.find(c => c.id == customerId);
             // UPDATED: Kiểm tra xem từ modal nào gọi để quay về đúng modal
@@ -2201,15 +2218,15 @@ async function saveNewOrder() {
 // Render care history
 function renderCareHistory(careHistory) {
     const container = document.getElementById('care-history-list');
-    
+
     // Sắp xếp theo ngày mới nhất
     const sortedHistory = [...careHistory].sort((a, b) => new Date(b.contactDate) - new Date(a.contactDate));
-    
+
     if (sortedHistory.length === 0) {
         container.innerHTML = '<p class="text-muted text-center" style="font-size:12px; margin:0; padding:5px;">Chưa có lịch sử chăm sóc</p>';
         return;
     }
-    
+
     // Render đúng cấu trúc TIMELINE như lúc view detail
     const historyHtml = `<div class="timeline">` + sortedHistory.map(entry => `
         <div class="timeline-item">
@@ -2228,33 +2245,33 @@ function renderCareHistory(careHistory) {
             </div>
         </div>
     `).join('') + `</div>`;
-    
+
     container.innerHTML = historyHtml;
 }
 
 // Edit care history
 function editCareHistory(entryId) {
     if (!currentCustomer) return;
-    
+
     const entry = currentCustomer.careHistory.find(e => e.id == entryId);
     if (!entry) return;
-    
+
     document.getElementById('care-form').reset();
     document.getElementById('care-customer-name').textContent = currentCustomer.name;
-    
+
     // Populate form with entry data
     document.getElementById('care-contact-date').value = formatDateForInput(entry.contactDate);
     document.getElementById('care-content').value = entry.content;
     document.getElementById('care-next-contact-date').value = formatDateForInput(entry.nextContactDate);
-    
+
     // Set staff selection
     setTimeout(() => {
         document.getElementById('care-staff').value = entry.staff || '';
     }, 100);
-    
+
     // Store entry ID for update
     document.getElementById('care-entry-id').value = entryId;
-    
+
     populateDropdowns();
     showModal('care-modal');
 }
@@ -2267,7 +2284,7 @@ async function deleteCareHistory(entryId, btn) {
     const originalIcon = btn.innerHTML;
     if(btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
     }
-    
+
     try {
         const result = await callGAS(
                 deleteCareHistory, currentCustomer.id, entryId, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
@@ -2294,13 +2311,13 @@ async function deleteCareHistory(entryId, btn) {
 // Format date for input fields (YYYY-MM-DD)
 function formatDateForInput(dateString) {
   if (!dateString) return '';
-  
+
   try {
     // Nếu đã đúng format YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       return dateString;
     }
-    
+
     // Nếu format DD/MM/YYYY hoặc D/M/YYYY
     if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString)) {
       const parts = dateString.split('/');
@@ -2309,11 +2326,11 @@ function formatDateForInput(dateString) {
       const year = parts[2];
       return `${year}-${month}-${day}`;
     }
-    
+
     // Fallback: parse bằng Date object
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-    
+
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -2327,20 +2344,20 @@ function formatDateForInput(dateString) {
 function addCareHistory(customerId) {
     currentCustomer = customers.find(c => c.id == customerId);
     if (!currentCustomer) return;
-    
+
     document.getElementById('care-form').reset();
     document.getElementById('care-entry-id').value = ''; // Reset entry ID
     document.getElementById('care-customer-name').textContent = `KH${currentCustomer.id} - ${currentCustomer.name}`;
-    
+
     // Set default dates
     const today = new Date().toISOString().split('T')[0];
     const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
+
     document.getElementById('care-contact-date').value = today;
     document.getElementById('care-next-contact-date').value = nextWeek;
-    
+
     populateDropdowns();
-    
+
     // FIX: Set default staff to current logged in user instead of assigned staff
     setTimeout(() => {
         const careStaffSelect = document.getElementById('care-staff');
@@ -2348,18 +2365,18 @@ function addCareHistory(customerId) {
             careStaffSelect.value = currentUser.name;
         }
     }, 100);
-    
+
     showModal('care-modal');
 }
 
 // Save care history
 async function saveCareHistory() {
     if (!currentCustomer) return;
-    
+
     const form = document.getElementById('care-form');
     const formData = new FormData(form);
     const entryId = document.getElementById('care-entry-id').value;
-    
+
     const careData = {
         contactDate: formData.get('contactDate'),
         content: formData.get('content'),
@@ -2371,11 +2388,11 @@ async function saveCareHistory() {
         alert('Vui lòng điền đầy đủ thông tin');
         return;
     }
-    
+
     try {
         showButtonLoading('#care-modal .btn-success', 'Đang lưu...');
         let result;
-        
+
         if (entryId && entryId.trim() !== '') {
             result =await callGAS(
                     'updateCareHistory', currentCustomer.id, parseInt(entryId), careData, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
@@ -2383,18 +2400,18 @@ async function saveCareHistory() {
             result = await callGAS(
                     'addCareHistory', currentCustomer.id, careData, currentUser ? currentUser.name : 'Unknown'); // Đã thêm user
         }
-        
+
         if (result.success) {
             // Ẩn loading và hiển thị thông báo ngay lập tức
             hideButtonLoading('#care-modal .btn-success');
             showNotification(entryId && entryId.trim() !== '' ? 'Cập nhật lịch sử chăm sóc thành công!' : 'Thêm lịch sử chăm sóc thành công!');
             document.getElementById('care-modal').classList.remove('show');
-            
+
             await refreshData();
             currentCustomer = customers.find(c => c.id == currentCustomer.id);
-            
+
             filterCustomers();
-            
+
             renderCareHistory(currentCustomer?.careHistory || []);
             updateCareCount();
             // THÊM DÒNG NÀY
@@ -2403,7 +2420,7 @@ async function saveCareHistory() {
             hideButtonLoading('#care-modal .btn-success');
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error saving care history:', error);
         hideButtonLoading('#care-modal .btn-success');
@@ -2449,10 +2466,10 @@ function renderSettingsContent() {
                 </div>
             </div>
         `).join('') : '<p class="text-muted">Chưa có nhân viên</p>';
-        
+
         staffContainer.innerHTML = staffHtml;
     }
-    
+
     // Render status list - giữ nguyên
     const statusContainer = document.querySelector('#settings #status-list');
     if (statusContainer) {
@@ -2461,7 +2478,7 @@ function renderSettingsContent() {
             const isProtectedStatus = s.name === 'Đã chốt' || s.name === 'Khách hàng mới';
             const isFirst = index === 0;
             const isLast = index === statuses.length - 1;
-            
+
             return `
                 <div class="settings-item">
                     <span style="color: ${s.color}">
@@ -2497,10 +2514,10 @@ function renderSettingsContent() {
                 </div>
             `;
         }).join('') : '<p class="text-muted">Chưa có trạng thái</p>';
-        
+
         statusContainer.innerHTML = statusHtml;
     }
-    
+
     // THÊM: Render source list
     const sourceContainer = document.querySelector('#settings #source-list');
     if (sourceContainer) {
@@ -2520,7 +2537,7 @@ function renderSettingsContent() {
                 </div>
             </div>
         `).join('') : '<p class="text-muted">Chưa có nguồn khách</p>';
-        
+
         sourceContainer.innerHTML = sourceHtml;
     }
 }
@@ -2533,13 +2550,13 @@ async function moveStatus(statusId, direction) {
         if (result.success) {
             showNotification(`Di chuyển trạng thái thành công!`);
             await refreshData();
-            
+
             // Refresh charts để cập nhật thứ tự màu sắc
             refreshChartsAfterStatusChange();
         } else {
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error moving status:', error);
         showNotification('Có lỗi xảy ra khi di chuyển trạng thái', 'error');
@@ -2551,40 +2568,40 @@ function addStaff() {
     document.getElementById('staff-form').reset();
     document.getElementById('staff-id').value = '';
     document.getElementById('staff-modal-title').textContent = 'Thêm nhân viên mới';
-    
+
     // RESET ALL FIELD STATES TO DEFAULT (EDITABLE)
     const nameField = document.getElementById('staff-name');
     const positionField = document.getElementById('staff-position');
     const usernameField = document.getElementById('staff-username');
     const passwordField = document.getElementById('staff-password');
-    
+
     // Reset name field
     nameField.readOnly = false;
     nameField.style.backgroundColor = 'white';
     nameField.style.cursor = 'text';
     nameField.title = '';
-    
+
     // Reset position field
     positionField.disabled = false;
     positionField.style.backgroundColor = 'white';
     positionField.style.cursor = 'pointer';
     positionField.title = '';
-    
+
     // Reset username field
     usernameField.readOnly = false;
     usernameField.style.backgroundColor = 'white';
     usernameField.style.cursor = 'text';
     usernameField.title = '';
-    
+
     // Reset password field
     passwordField.readOnly = false;
     passwordField.style.backgroundColor = 'white';
     passwordField.style.cursor = 'text';
     passwordField.title = '';
-    
+
     // ↓↓↓ THAY ĐỔI: Kiểm tra giá trị position mặc định và hiển thị manager field nếu cần
     const managerField = document.getElementById('manager-field');
-    
+
     // Đợi DOM render xong rồi kiểm tra giá trị position
     setTimeout(() => {
         const currentPosition = positionField.value;
@@ -2595,7 +2612,7 @@ function addStaff() {
             managerField.style.display = 'none';
         }
     }, 50);
-    
+
     showModal('staff-modal');
 }
 
@@ -2603,7 +2620,7 @@ function addStaff() {
 function editStaff(staffId) {
     const staffMember = staff.find(s => s.id == staffId);
     if (!staffMember) return;
-    
+
     document.getElementById('staff-id').value = staffMember.id;
     document.getElementById('staff-name').value = staffMember.name;
     document.getElementById('staff-position').value = staffMember.position;
@@ -2611,30 +2628,30 @@ function editStaff(staffId) {
     document.getElementById('staff-password').value = staffMember.password || '';
     // Kiểm tra xem nhân viên có được sử dụng không
     const isInUse = isStaffInUse(staffMember.name);
-    
+
     // Disable các field nếu nhân viên đang được sử dụng, chỉ để password có thể sửa
     const nameField = document.getElementById('staff-name');
     const positionField = document.getElementById('staff-position');
     const usernameField = document.getElementById('staff-username');
     const passwordField = document.getElementById('staff-password');
-    
+
     if (isInUse) {
         // Disable tên, chức vụ, tên đăng nhập
         nameField.readOnly = true;
         nameField.style.backgroundColor = '#f5f5f5';
         nameField.style.cursor = 'not-allowed';
         nameField.title = 'Không thể sửa vì đang được sử dụng bởi khách hàng';
-        
+
         positionField.disabled = true;
         positionField.style.backgroundColor = '#f5f5f5';
         positionField.style.cursor = 'not-allowed';
         positionField.title = 'Không thể sửa vì đang được sử dụng bởi khách hàng';
-        
+
         usernameField.readOnly = true;
         usernameField.style.backgroundColor = '#f5f5f5';
         usernameField.style.cursor = 'not-allowed';
         usernameField.title = 'Không thể sửa vì đang được sử dụng bởi khách hàng';
-        
+
         // Password vẫn có thể sửa
         passwordField.readOnly = false;
         passwordField.style.backgroundColor = 'white';
@@ -2646,17 +2663,17 @@ function editStaff(staffId) {
         nameField.style.backgroundColor = 'white';
         nameField.style.cursor = 'text';
         nameField.title = '';
-        
+
         positionField.disabled = false;
         positionField.style.backgroundColor = 'white';
         positionField.style.cursor = 'pointer';
         positionField.title = '';
-        
+
         usernameField.readOnly = false;
         usernameField.style.backgroundColor = 'white';
         usernameField.style.cursor = 'text';
         usernameField.title = '';
-        
+
         passwordField.readOnly = false;
         passwordField.style.backgroundColor = 'white';
         passwordField.style.cursor = 'text';
@@ -2673,7 +2690,7 @@ function editStaff(staffId) {
     } else {
         managerField.style.display = 'none';
     }
-    
+
     document.getElementById('staff-modal-title').textContent = 'Sửa thông tin nhân viên';
     showModal('staff-modal');
 }
@@ -2683,13 +2700,13 @@ async function saveStaff() {
     const form = document.getElementById('staff-form');
     const formData = new FormData(form);
     const staffId = document.getElementById('staff-id').value;
-    
+
     // Lấy giá trị trực tiếp từ các field thay vì từ formData
     const nameField = document.getElementById('staff-name');
     const positionField = document.getElementById('staff-position');
     const usernameField = document.getElementById('staff-username');
     const passwordField = document.getElementById('staff-password');
-    
+
     const staffData = {
         name: nameField.value.trim(),
         position: positionField.value.trim(),
@@ -2697,16 +2714,16 @@ async function saveStaff() {
         password: passwordField.value.trim(),
         manager: document.getElementById('staff-manager').value.trim()
     };
-    
+
     // Validate chỉ những field cần thiết
     if (!staffData.name || !staffData.position || !staffData.username || !staffData.password) {
         alert('Vui lòng điền đầy đủ thông tin');
         return;
     }
-    
+
     try {
         showButtonLoading('#staff-modal .btn-success', 'Đang lưu...');
-        
+
         let result;
         if (staffId) {
             result = await callGAS(
@@ -2715,7 +2732,7 @@ async function saveStaff() {
             result = await callGAS(
                     'addStaff',staffData);
         }
-        
+
         if (result.success) {
             // Ẩn loading và hiển thị thông báo ngay lập tức
             hideButtonLoading('#staff-modal .btn-success');
@@ -2726,7 +2743,7 @@ async function saveStaff() {
             hideButtonLoading('#staff-modal .btn-success');
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error saving staff:', error);
         hideButtonLoading('#staff-modal .btn-success');
@@ -2738,11 +2755,11 @@ async function saveStaff() {
 function populateManagerDropdown(excludeStaffId) {
     const managerSelect = document.getElementById('staff-manager');
     if (!managerSelect) return;
-    
+
     const managers = staff.filter(s => 
         s.position !== 'Admin' && s.id != excludeStaffId
     );
-    
+
     managerSelect.innerHTML = '<option value="">Không có người quản lý</option>' +
         managers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
 }
@@ -2751,19 +2768,19 @@ function populateManagerDropdown(excludeStaffId) {
 async function deleteStaffConfirm(staffId) {
     const staffMember = staff.find(s => s.id == staffId);
     if (!staffMember) return;
-    
+
     // Kiểm tra xem nhân viên có được sử dụng không
     if (isStaffInUse(staffMember.name)) {
         showNotification(`Không thể xóa nhân viên "${staffMember.name}" vì đang được phân công cho khách hàng!`, 'info');
         return;
     }
-    
+
     // --- THAY ĐỔI TẠI ĐÂY: Dùng Custom Confirm thay vì confirm() mặc định ---
     if (!(await showCustomConfirm(`Bạn có chắc muốn xóa nhân viên "${staffMember.name}"?`, 'Xóa nhân viên'))) {
         return;
     }
     // -----------------------------------------------------------------------
-    
+
     try {
         const result = await callGAS(
                 'deleteStaff', staffId);
@@ -2774,7 +2791,7 @@ async function deleteStaffConfirm(staffId) {
         } else {
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error deleting staff:', error);
         showNotification('Có lỗi xảy ra khi xóa nhân viên', 'error');
@@ -2788,20 +2805,20 @@ function addStatus() {
     document.getElementById('status-id').value = '';
     document.getElementById('status-color').value = '#3B82F6';
     document.getElementById('status-modal-title').textContent = 'Thêm trạng thái mới';
-    
+
     // RESET NAME FIELD STATE TO DEFAULT (EDITABLE)
     const nameField = document.getElementById('status-name');
     nameField.readOnly = false;
     nameField.style.backgroundColor = 'white';
     nameField.style.cursor = 'text';
     nameField.title = '';
-    
+
     // Cập nhật color text
     const colorText = document.getElementById('color-text');
     if (colorText) {
         colorText.textContent = '#3B82F6';
     }
-    
+
     showModal('status-modal');
 }
 
@@ -2809,7 +2826,7 @@ function addStatus() {
 function cancelCareModal() {
     // Đóng modal care
     document.getElementById('care-modal').classList.remove('show');
-    
+
     // Nếu đang ở table view và có currentCustomer, mở lại customer detail modal
     if (currentCustomer) {
         document.getElementById('customer-detail-modal').classList.add('show');
@@ -2823,12 +2840,12 @@ function cancelCareModal() {
 function editStatus(statusId) {
     const status = statuses.find(s => s.id == statusId);
     if (!status) return;
-    
+
     document.getElementById('status-id').value = status.id;
     document.getElementById('status-name').value = status.name;
     document.getElementById('status-color').value = status.color;
     document.getElementById('status-modal-title').textContent = 'Sửa thông tin trạng thái';
-    
+
     // Dùng readonly thay vì disabled để vẫn submit được
     const nameField = document.getElementById('status-name');
     if (isStatusInUse(status.name)) {
@@ -2842,13 +2859,13 @@ function editStatus(statusId) {
         nameField.style.cursor = 'text';
         nameField.title = '';
     }
-    
+
     // Cập nhật color text nếu có
     const colorText = document.getElementById('color-text');
     if (colorText) {
         colorText.textContent = status.color.toUpperCase();
     }
-    
+
     showModal('status-modal');
 }
 
@@ -2857,20 +2874,20 @@ async function saveStatus() {
     const form = document.getElementById('status-form');
     const formData = new FormData(form);
     const statusId = document.getElementById('status-id').value;
-    
+
     const statusData = {
         name: formData.get('name').trim(),
         color: formData.get('color')
     };
-    
+
     if (!statusData.name) {
         alert('Vui lòng nhập tên trạng thái');
         return;
     }
-    
+
     try {
         showButtonLoading('#status-modal .btn-success', 'Đang lưu...');
-        
+
         let result;
         if (statusId) {
             result = await callGAS(
@@ -2879,21 +2896,21 @@ async function saveStatus() {
             result = await callGAS(
                     'addStatus',statusData);
         }
-        
+
         if (result.success) {
             // Ẩn loading và hiển thị thông báo ngay lập tức
             hideButtonLoading('#status-modal .btn-success');
             showNotification(statusId ? 'Cập nhật trạng thái thành công!' : 'Thêm trạng thái thành công!');
             closeModal();
             await refreshData();
-            
+
             // Refresh charts with new colors
             refreshChartsAfterStatusChange();
         } else {
             hideButtonLoading('#status-modal .btn-success');
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error saving status:', error);
         hideButtonLoading('#status-modal .btn-success');
@@ -2906,19 +2923,19 @@ async function saveStatus() {
 async function deleteStatusConfirm(statusId) {
     const status = statuses.find(s => s.id == statusId);
     if (!status) return;
-    
+
     // Kiểm tra xem trạng thái có được sử dụng không
     if (isStatusInUse(status.name)) {
         showNotification(`Không thể xóa trạng thái "${status.name}" vì đang được sử dụng bởi khách hàng!`, 'info');
         return;
     }
-    
+
     // --- THAY ĐỔI TẠI ĐÂY ---
     if (!(await showCustomConfirm(`Bạn có chắc muốn xóa trạng thái "${status.name}"?`, 'Xóa trạng thái'))) {
         return;
     }
     // ------------------------
-    
+
     try {
         const result = await callGAS(
                 'deleteStatus', statusId);
@@ -2930,7 +2947,7 @@ async function deleteStatusConfirm(statusId) {
         } else {
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error deleting status:', error);
         showNotification('Có lỗi xảy ra khi xóa trạng thái', 'error');
@@ -2980,11 +2997,11 @@ function updateStatusStyles() {
     if (existingStyle) {
         existingStyle.remove();
     }
-    
+
     // Tạo CSS mới
     const style = document.createElement('style');
     style.id = 'dynamic-status-styles';
-    
+
     const css = statuses.map(status => `
         .status-dynamic-${status.id} {
             background: ${hexToRgba(status.color, 0.15)};
@@ -2992,7 +3009,7 @@ function updateStatusStyles() {
             border: 1px solid ${hexToRgba(status.color, 0.2)};
         }
     `).join('');
-    
+
     style.textContent = css;
     document.head.appendChild(style);
 }
@@ -3038,10 +3055,10 @@ function sortTable(field, keepDirection = false) {
             currentSort.direction = 'asc';
         }
     }
-    
+
     filteredCustomers.sort((a, b) => {
         let valueA, valueB;
-        
+
         switch(field) {
             case 'id': // Sắp xếp theo ID số
                 valueA = parseInt(a.id);
@@ -3100,12 +3117,12 @@ function sortTable(field, keepDirection = false) {
             default:
                 return 0;
         }
-        
+
         if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
         if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
         return 0;
     });
-    
+
     currentPage = 1;
     updateSortIcons(field, currentSort.direction);
     renderCustomers();
@@ -3116,7 +3133,7 @@ function updateSortIcons(activeField, direction) {
     document.querySelectorAll('th i[id^="sort-"]').forEach(icon => {
         icon.className = 'fas fa-sort';
     });
-    
+
     // Set active icon
     const activeIcon = document.getElementById(`sort-${activeField}`);
     if (activeIcon) {
@@ -3152,11 +3169,11 @@ async function changeCustomerStatus(customerId, newStatus) {
         showModal('order-info-modal');
         return;
     }
-    
+
     const oldStatusForAPI = customer.status;
     // Cập nhật Optimistic UI (Giao diện thay đổi ngay)
     customer.status = newStatus === 'Chưa xác định' ? '' : newStatus;
-    
+
     // Vẽ lại các tab trạng thái ngay lập tức
     renderStatusTabs();
     // Vẽ lại bảng dữ liệu
@@ -3181,7 +3198,7 @@ async function changeCustomerStatus(customerId, newStatus) {
             filterCustomers();
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error changing status:', error);
         customer.status = oldStatusForAPI;
@@ -3202,11 +3219,11 @@ async function refreshData() {
             statuses = result.statuses;
             sources = result.sources;
             customers = result.customers;
-            
+
             window.allHistoryData = result.history || [];
             window.reminders = result.reminders || [];
             updateReminderTabBadge();
-            
+
             // Cập nhật giao diện các tab khác
             filterCustomers();
             populateDropdowns();
@@ -3217,7 +3234,7 @@ async function refreshData() {
             if (reportsTab && reportsTab.classList.contains('active')) {
                 renderReports();
             }
-            
+
             const historyTab = document.querySelector('.nav-tab[data-tab="history"]');
             if (historyTab && historyTab.classList.contains('active')) {
                 loadHistoryLogs();
@@ -3239,14 +3256,14 @@ function addSource() {
     document.getElementById('source-form').reset();
     document.getElementById('source-id').value = '';
     document.getElementById('source-modal-title').textContent = 'Thêm nguồn khách mới';
-    
+
     // RESET FIELD STATES TO DEFAULT
     const nameField = document.getElementById('source-name');
     nameField.readOnly = false;
     nameField.style.backgroundColor = 'white';
     nameField.style.cursor = 'text';
     nameField.title = '';
-    
+
     showModal('source-modal');
 }
 
@@ -3254,15 +3271,15 @@ function addSource() {
 function editSource(sourceId) {
     const source = sources.find(s => s.id == sourceId);
     if (!source) return;
-    
+
     document.getElementById('source-id').value = source.id;
     document.getElementById('source-name').value = source.name;
     document.getElementById('source-description').value = source.description || '';
     document.getElementById('source-modal-title').textContent = 'Sửa thông tin nguồn khách';
-    
+
     // Kiểm tra xem nguồn khách có được sử dụng không
     const isInUse = isSourceInUse(source.name);
-    
+
     const nameField = document.getElementById('source-name');
     if (isInUse) {
         nameField.readOnly = true;
@@ -3275,7 +3292,7 @@ function editSource(sourceId) {
         nameField.style.cursor = 'text';
         nameField.title = '';
     }
-    
+
     showModal('source-modal');
 }
 
@@ -3284,20 +3301,20 @@ async function saveSource() {
     const form = document.getElementById('source-form');
     const formData = new FormData(form);
     const sourceId = document.getElementById('source-id').value;
-    
+
     const sourceData = {
         name: formData.get('name').trim(),
         description: formData.get('description').trim()
     };
-    
+
     if (!sourceData.name) {
         alert('Vui lòng nhập tên nguồn khách');
         return;
     }
-    
+
     try {
         showButtonLoading('#source-modal .btn-success', 'Đang lưu...');
-        
+
         let result;
         if (sourceId) {
             result = await callGAS(
@@ -3306,7 +3323,7 @@ async function saveSource() {
             result = await callGAS(
                     'addSource',sourceData);
         }
-        
+
         if (result.success) {
             hideButtonLoading('#source-modal .btn-success');
             showNotification(sourceId ? 'Cập nhật nguồn khách thành công!' : 'Thêm nguồn khách thành công!');
@@ -3316,7 +3333,7 @@ async function saveSource() {
             hideButtonLoading('#source-modal .btn-success');
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error saving source:', error);
         hideButtonLoading('#source-modal .btn-success');
@@ -3328,19 +3345,19 @@ async function saveSource() {
 async function deleteSourceConfirm(sourceId) {
     const source = sources.find(s => s.id == sourceId);
     if (!source) return;
-    
+
     // Kiểm tra xem nguồn khách có được sử dụng không
     if (isSourceInUse(source.name)) {
         showNotification(`Không thể xóa nguồn khách "${source.name}" vì đang được sử dụng bởi khách hàng!`, 'info');
         return;
     }
-    
+
     // --- THAY ĐỔI TẠI ĐÂY ---
     if (!(await showCustomConfirm(`Bạn có chắc muốn xóa nguồn khách "${source.name}"?`, 'Xóa nguồn khách'))) {
         return;
     }
     // ------------------------
-    
+
     try {
         const result = await callGAS(
                 'deleteSource',sourceId);
@@ -3351,7 +3368,7 @@ async function deleteSourceConfirm(sourceId) {
         } else {
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error deleting source:', error);
         showNotification('Có lỗi xảy ra khi xóa nguồn khách', 'error');
@@ -3367,14 +3384,14 @@ function isSourceInUse(sourceName) {
 function toggleClosedFields() {
     const statusSelect = document.getElementById('customer-status');
     const closedFields = document.getElementById('closed-fields');
-    
+
     // Luôn hiển thị closed fields để quản lý orders
     // Không còn phụ thuộc vào status "Đã chốt" nữa
     closedFields.style.display = 'block';
-    
+
     // Nếu đang trong mode thêm mới và chọn "Đã chốt", hiển thị form thêm đơn hàng đầu tiên
     const customerId = document.getElementById('customer-id').value;
-    
+
     if (!customerId && statusSelect.value === 'Đã chốt') {
         // Mode thêm mới + status "Đã chốt" → hiển thị form đơn hàng
         closedFields.innerHTML = `
@@ -3418,12 +3435,12 @@ function toggleClosedFields() {
 function formatOrderValue(input) {
     // Lấy giá trị và loại bỏ tất cả ký tự không phải số
     let value = input.value.replace(/[^\d]/g, '');
-    
+
     // Format với dấu chấm phân cách hàng nghìn
     if (value) {
         value = parseInt(value).toLocaleString('vi-VN');
     }
-    
+
     // Set lại giá trị đã format
     input.value = value;
 }
@@ -3437,7 +3454,7 @@ function parseOrderValue(formattedValue) {
 function toggleOrderColumns() {
     const body = document.body;
     const btn = document.getElementById('toggle-order-btn');
-    
+
     if (body.classList.contains('hide-order-columns')) {
         // Hiện cột
         body.classList.remove('hide-order-columns');
@@ -3474,7 +3491,7 @@ async function changeCustomerStatusInModal(customerId, newStatus, oldStatus) {
         }
         return;
     }
-    
+
     // Nếu chuyển sang "Đã chốt", hiện modal nhập thông tin đơn hàng
     if (newStatus === 'Đã chốt') {
         document.getElementById('order-customer-id').value = customerId;
@@ -3485,13 +3502,13 @@ async function changeCustomerStatusInModal(customerId, newStatus, oldStatus) {
         } else {
             document.getElementById('order-value').value = '';
         }
-        
+
         // Ẩn customer detail modal và hiện order info modal
         document.getElementById('customer-detail-modal').classList.remove('show');
         showModal('order-info-modal');
         return;
     }
-    
+
     // Với các trạng thái khác, cập nhật trực tiếp
     await updateCustomerStatusDirect(customerId, newStatus, oldStatus);
 }
@@ -3503,7 +3520,7 @@ async function updateCustomerStatusDirect(customerId, newStatus, oldStatus) {
     try {
         // Cập nhật UI ngay lập tức
         customer.status = newStatus === 'Chưa xác định' ? '' : newStatus;
-        
+
         // Cập nhật dropdown trong modal ngay lập tức nếu đang mở
         const statusElement = document.querySelector('#detail-customer-info select');
         if (statusElement) {
@@ -3511,7 +3528,7 @@ async function updateCustomerStatusDirect(customerId, newStatus, oldStatus) {
             // Cập nhật màu sắc dropdown
             if (typeof updateStatusDropdownColor === 'function') updateStatusDropdownColor();
         }
-        
+
         // Báo thành công ngay (Optimistic)
         showNotification(`Chuyển trạng thái thành công từ "${oldStatus || 'Chưa xác định'}" sang "${newStatus}"!`);
 
@@ -3536,7 +3553,7 @@ async function updateCustomerStatusDirect(customerId, newStatus, oldStatus) {
             // Refresh ngầm để lấy dữ liệu mới nhất
             refreshData(); 
         }
-        
+
     } catch (error) {
         console.error('Error changing status:', error);
         showNotification('Có lỗi xảy ra khi chuyển trạng thái', 'error');
@@ -3549,7 +3566,7 @@ async function updateCustomerStatusDirect(customerId, newStatus, oldStatus) {
 
 function cancelOrderInfo() {
     document.getElementById('order-info-modal').classList.remove('show');
-    
+
     // 1. Nếu đang ở trong Modal Chi tiết (Detail Modal)
     if (currentCustomer && document.getElementById('customer-detail-modal')) {
         document.getElementById('customer-detail-modal').classList.add('show');
@@ -3562,15 +3579,15 @@ function cancelOrderInfo() {
     // 2. Nếu đang ở ngoài Danh sách (List View) - SỬA Ở ĐÂY
     else if (pendingListStatusChange) {
         const { customerId, oldStatus, oldStyle, oldClass } = pendingListStatusChange;
-        
+
         const badge = document.getElementById(`status-badge-${customerId}`);
         const textSpan = document.getElementById(`status-text-${customerId}`);
-        
+
         if (badge && textSpan) {
             textSpan.textContent = oldStatus || 'Chưa xác định';
             badge.className = oldClass;
             badge.setAttribute('style', oldStyle); // Phục hồi style cũ
-            
+
             // Phục hồi giá trị cho select ẩn
             const selectEl = badge.querySelector('select');
             if(selectEl) selectEl.value = oldStatus;
@@ -3588,18 +3605,18 @@ async function saveOrderInfo() {
     const closedDate = document.getElementById('order-closed-date').value;
     const orderCode = document.getElementById('order-code').value.trim();
     const orderValue = parseOrderValue(document.getElementById('order-value').value);
-    
+
     if (!closedDate || !orderValue) {
         alert('Vui lòng nhập đầy đủ Ngày chốt và Giá trị đơn hàng');
         return;
     }
-    
+
     const customer = customers.find(c => c.id == customerId);
     if (!customer) return;
-    
+
     try {
         showButtonLoading('#order-info-modal .btn-success', 'Đang lưu...');
-        
+
         // UPDATED: Thêm order mới vào orders array
         const newOrder = {
             id: Date.now(),
@@ -3608,29 +3625,29 @@ async function saveOrderInfo() {
             orderValue: orderValue,
             createdAt: new Date().toISOString()
         };
-        
+
         // Lấy orders hiện tại hoặc tạo mới
         const currentOrders = customer.orders || [];
         currentOrders.push(newOrder);
-        
+
         // Cập nhật customer data
         const updatedCustomerData = {
             ...customer,
             status: 'Đã chốt',
             orders: currentOrders
         };
-        
+
         // CẬP NHẬT UI NGAY LẬP TỨC
         customer.status = 'Đã chốt';
         customer.orders = currentOrders;
-        
+
         // Đóng modal và render ngay
         hideButtonLoading('#order-info-modal .btn-success');
         document.getElementById('order-info-modal').classList.remove('show');
-        
+
         // Báo thành công ngay
         showNotification('Chốt đơn hàng thành công!');
-        
+
         pendingListStatusChange = null;
         // Gọi API sau
         const result = await callGAS(
@@ -3644,7 +3661,7 @@ async function saveOrderInfo() {
         } else {
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Error saving order info:', error);
         hideButtonLoading('#order-info-modal .btn-success');
@@ -3660,7 +3677,7 @@ function updateStatusDropdownColor() {
         const color = selectedOption.getAttribute('data-color') || '#6B7280';
         dropdown.style.color = color;
         dropdown.style.fontWeight = '600';
-        
+
         // Tạo CSS cho từng option
         const options = dropdown.querySelectorAll('option');
         options.forEach(option => {
@@ -3677,7 +3694,7 @@ function showNotification(message, type = 'success') {
     // Remove existing notification
     const existing = document.querySelector('.custom-notification');
     if (existing) existing.remove();
-    
+
     // Create new notification
     const notification = document.createElement('div');
     notification.className = `custom-notification ${type}`;
@@ -3688,9 +3705,9 @@ function showNotification(message, type = 'success') {
             <span>${message}</span>
         </div>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto remove after 1 seconds
     setTimeout(() => {
         if (notification.parentNode) {
@@ -3704,42 +3721,42 @@ function needsCareInNext7Days(customer) {
     if (!customer.careHistory || customer.careHistory.length === 0) {
         return false;
     }
-    
+
     // Lấy lịch sử chăm sóc gần nhất
     const latestCare = customer.careHistory
         .sort((a, b) => new Date(b.contactDate) - new Date(a.contactDate))[0];
-    
+
     // Kiểm tra nextContactDate
     if (!latestCare.nextContactDate) {
         return false;
     }
-    
+
     const nextContactDate = new Date(latestCare.nextContactDate);
     const today = new Date();
     const next7Days = new Date();
     next7Days.setDate(today.getDate() + 7);
-    
+
     // Reset time để so sánh chính xác theo ngày
     today.setHours(0, 0, 0, 0);
     next7Days.setHours(23, 59, 59, 999);
     nextContactDate.setHours(0, 0, 0, 0);
-    
+
     return nextContactDate >= today && nextContactDate <= next7Days;
 }
 
 // Function khởi tạo default date range (đầu tháng - cuối tháng)
 function initializeReportDateRange() {
     const today = new Date();
-    
+
     // Ngày đầu tháng hiện tại
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    
+
     // Ngày cuối tháng hiện tại  
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
+
     const fromDateInput = document.getElementById('report-from-date');
     const toDateInput = document.getElementById('report-to-date');
-    
+
     if (fromDateInput && toDateInput) {
         // Fix format để tránh timezone issues
         const formatDate = (date) => {
@@ -3748,17 +3765,17 @@ function initializeReportDateRange() {
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         };
-        
+
         fromDateInput.value = formatDate(firstDay);
         toDateInput.value = formatDate(lastDay);
-        
+
         // THAY ĐỔI: Set đúng thời gian cho reportFromDate và reportToDate
         reportFromDate = new Date(firstDay);
         reportFromDate.setHours(0, 0, 0, 0);
-        
+
         reportToDate = new Date(lastDay);
         reportToDate.setHours(23, 59, 59, 999);
-        
+
         // THÊM EVENT LISTENERS CHO AUTO UPDATE
         setupDateChangeListeners();
     }
@@ -3767,7 +3784,7 @@ function initializeReportDateRange() {
 function applyReportDateFilterAuto() {
     const fromDateInput = document.getElementById('report-from-date');
     const toDateInput = document.getElementById('report-to-date');
-    
+
     if (fromDateInput.value) {
         reportFromDate = new Date(fromDateInput.value);
         reportFromDate.setHours(0, 0, 0, 0); // THÊM: Set to start of day
@@ -3776,12 +3793,12 @@ function applyReportDateFilterAuto() {
         reportToDate = new Date(toDateInput.value);
         reportToDate.setHours(23, 59, 59, 999); // Set to end of day
     }
-    
+
     if (reportFromDate && reportToDate && reportFromDate > reportToDate) {
         showNotification('Ngày bắt đầu không thể lớn hơn ngày kết thúc!', 'error');
         return;
     }
-    
+
     // Re-render all reports
     renderReports();
 }
@@ -3789,13 +3806,13 @@ function applyReportDateFilterAuto() {
 function setupDateChangeListeners() {
     const fromDateInput = document.getElementById('report-from-date');
     const toDateInput = document.getElementById('report-to-date');
-    
+
     if (fromDateInput && toDateInput) {
         // Debounce function để tránh call quá nhiều
         const debouncedUpdate = debounce(function() {
             applyReportDateFilterAuto();
         }, 300);
-        
+
         fromDateInput.addEventListener('change', debouncedUpdate);
         toDateInput.addEventListener('change', debouncedUpdate);
     }
@@ -3807,24 +3824,24 @@ function resetReportDateFilter() {
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
+
     const fromDateInput = document.getElementById('report-from-date');
     const toDateInput = document.getElementById('report-to-date');
-    
+
     const formatDate = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
-    
+
     if (fromDateInput && toDateInput) {
         fromDateInput.value = formatDate(firstDay);
         toDateInput.value = formatDate(lastDay);
-        
+
         reportFromDate = firstDay;
         reportToDate = lastDay;
-        
+
         renderReports();
         showNotification('Đã reset bộ lọc ngày!');
     }
@@ -3833,24 +3850,24 @@ function resetReportDateFilter() {
 // Function kiểm tra ngày có trong khoảng filter không
 function isDateInRange(dateString, filterType = 'created') {
     if (!dateString || (!reportFromDate && !reportToDate)) return true;
-    
+
     const checkDate = new Date(dateString);
     checkDate.setHours(12, 0, 0, 0); // THAY ĐỔI: Set to noon để tránh timezone issues
-    
+
     // So sánh với từ ngày (bắt đầu ngày)
     if (reportFromDate) {
         const fromDate = new Date(reportFromDate);
         fromDate.setHours(0, 0, 0, 0);
         if (checkDate < fromDate) return false;
     }
-    
+
     // So sánh với đến ngày (cuối ngày)
     if (reportToDate) {
         const toDate = new Date(reportToDate);
         toDate.setHours(23, 59, 59, 999);
         if (checkDate > toDate) return false;
     }
-    
+
     return true;
 }
 
@@ -3915,45 +3932,45 @@ function showChangePasswordModal() {
 async function saveNewPassword() {
     const newPassword = document.getElementById('new-password').value.trim();
     const confirmPassword = document.getElementById('confirm-password').value.trim();
-    
+
     if (!newPassword || !confirmPassword) {
         showNotification('Vui lòng nhập đầy đủ thông tin', 'error');
         return;
     }
-    
+
     if (newPassword !== confirmPassword) {
         showNotification('Mật khẩu nhập lại không khớp!', 'error');
         return;
     }
-    
+
     if (newPassword.length < 4) {
         showNotification('Mật khẩu phải có ít nhất 4 ký tự', 'error');
         return;
     }
-    
+
     if (!currentUser || !currentUser.username) {
         showNotification('Không tìm thấy thông tin tài khoản', 'error');
         return;
     }
-    
+
     try {
         showButtonLoading('#change-password-modal .btn-success', 'Đang lưu...');
-        
+
         const result = await callGAS(
                 'changePassword',currentUser.username, newPassword);
-        
+
         if (result.success) {
             hideButtonLoading('#change-password-modal .btn-success');
             showNotification('Đổi mật khẩu thành công!');
             closeModal();
-            
+
             // Cập nhật password trong currentUser (không cần reload)
             currentUser.password = newPassword;
         } else {
             hideButtonLoading('#change-password-modal .btn-success');
             showNotification('Lỗi: ' + result.error, 'error');
         }
-        
+
     } catch (error) {
         console.error('Lỗi đổi mật khẩu:', error);
         hideButtonLoading('#change-password-modal .btn-success');
@@ -3988,12 +4005,12 @@ function renderStatusTabs() {
             customer.orderCode,
             customer.email
         ].some(val => val && String(val).toLowerCase().includes(searchTerm));
-            
+
         const matchesStaff = !staffFilter || customer.assignedStaff === staffFilter;
-        
+
         // Gọi hàm checkDateFilter có sẵn với giá trị ngày lấy từ giao diện
         const matchesDate = checkDateFilter(customer.createdDate, dateFilterVal);
-        
+
         const matchesCareNeeded = !careNeededVal || needsCareInNext7Days(customer);
 
         // NẾU KHỚP TẤT CẢ (TRỪ STATUS) THÌ MỚI ĐẾM
@@ -4051,7 +4068,7 @@ function renderStatusTabs() {
         const isActive = currentStatusTab === status.name;
         const count = counts[status.name] || 0;
         const color = status.color || '#333';
-        
+
         const style = isActive 
             ? `background: ${color}; color: white; z-index: 10;` 
             : `background: ${hexToRgba(color, bgOpacity)}; color: ${inactiveTextColor};`;
@@ -4073,13 +4090,13 @@ function renderStatusTabs() {
 
 function switchStatusTab(statusName) {
     currentStatusTab = statusName;
-    
+
     // Re-render lại tabs để cập nhật trạng thái active
     renderStatusTabs();
-    
+
     // Reset về trang 1
     currentPage = 1;
-    
+
     // Filter và render lại bảng
     filterCustomers();
 }
@@ -4087,7 +4104,7 @@ function switchStatusTab(statusName) {
 function setupCustomDateFilter() {
     const dateSelect = document.getElementById('date-filter');
     const customInput = document.getElementById('custom-date-picker');
-    
+
     // 1. Khởi tạo Flatpickr
     const fp = flatpickr(customInput, {
         mode: "range",
@@ -4097,10 +4114,10 @@ function setupCustomDateFilter() {
             if (selectedDates.length === 2) {
                 customStartDate = selectedDates[0];
                 customStartDate.setHours(0,0,0,0); // Đầu ngày
-                
+
                 customEndDate = selectedDates[1];
                 customEndDate.setHours(23,59,59,999); // Cuối ngày
-                
+
                 dateFilter = 'custom';
                 filterCustomers();
             }
@@ -4132,7 +4149,7 @@ function resetCustomerFilters() {
     // 2. Reset bộ lọc ngày về "Tháng này"
     const dateSelect = document.getElementById('date-filter');
     const customInput = document.getElementById('custom-date-picker');
-    
+
     if (dateSelect) {
         dateSelect.value = 'thisMonth';     // Giá trị mặc định
         dateSelect.style.display = 'block'; // Hiện lại dropdown
@@ -4141,20 +4158,20 @@ function resetCustomerFilters() {
         customInput.style.display = 'none'; // Ẩn ô nhập ngày tự chọn
         customInput.value = '';
     }
-    
+
     // 3. Reset checkbox & Tabs
     const careCheckbox = document.getElementById('care-needed-checkbox');
     if (careCheckbox) careCheckbox.checked = false;
-    
+
     currentStatusTab = ''; // Về tab "Tất cả"
 
     // 4. Cập nhật biến toàn cục & Render lại
     dateFilter = 'thisMonth';
     careNeededFilter = false;
-    
+
     renderStatusTabs(); // Cập nhật thanh trạng thái (số liệu về mặc định)
     filterCustomers();  // Tải lại bảng dữ liệu
-    
+
     // 5. HIỂN THỊ THÔNG BÁO (QUAN TRỌNG)
     showNotification('Đã reset bộ lọc thành công!', 'success');
 }
@@ -4163,7 +4180,7 @@ function resetCustomerFilters() {
 function renderHistoryTable() {
     const tbody = document.getElementById('history-table-body');
     const logs = historyFilteredLogs;
-    
+
     // Cập nhật UI phân trang ngay cả khi không có dữ liệu
     updateHistoryPaginationUI(historyCurrentPage, logs.length);
 
@@ -4176,20 +4193,20 @@ function renderHistoryTable() {
     const totalPages = Math.ceil(totalItems / historyItemsPerPage);
     if (historyCurrentPage < 1) historyCurrentPage = 1;
     if (historyCurrentPage > totalPages) historyCurrentPage = totalPages;
-    
+
     // Tính toán lại range hiển thị sau khi chỉnh page
     updateHistoryPaginationUI(historyCurrentPage, totalItems);
 
     const startIndex = (historyCurrentPage - 1) * historyItemsPerPage;
     const endIndex = Math.min(startIndex + historyItemsPerPage, totalItems);
     const pageLogs = logs.slice(startIndex, endIndex);
-    
+
     const html = pageLogs.map(log => {
         let badgeClass = 'secondary';
         if (log.a === 'Sửa') badgeClass = 'warning';
         if (log.a === 'Thêm') badgeClass = 'success';
         if (log.a === 'Xóa') badgeClass = 'danger';
-        
+
         let categoryColor = '#666';
         let categoryText = log.c || 'Khác';
         if (categoryText === 'Đơn hàng') categoryColor = '#059669';
@@ -4217,7 +4234,7 @@ function renderHistoryTable() {
             </tr>
         `;
     }).join('');
-    
+
     tbody.innerHTML = html;
 }
 
@@ -4228,10 +4245,10 @@ function updateHistoryPaginationUI(current, total) {
     const showingSpan = document.getElementById('hist-showing-info'); // Span mới
     const prevBtn = document.getElementById('hist-prev');
     const nextBtn = document.getElementById('hist-next');
-    
+
     // Cập nhật số trang 1/10
     if (infoSpan) infoSpan.textContent = total === 0 ? "1/1" : `${current}/${totalPages}`;
-    
+
     // Cập nhật dòng "Hiển thị X-Y trong tổng Z"
     if (showingSpan) {
         if (total === 0) {
@@ -4266,7 +4283,7 @@ function filterHistoryTable() {
             (log.u && log.u.toLowerCase().includes(term)) || 
             (log.o && log.o.toLowerCase().includes(term)) || 
             (log.d && log.d.toLowerCase().includes(term));
-            
+
         // 2. Lọc theo Hành động (Thêm/Sửa/Xóa) - log.a
         const matchesAction = !actionFilter || log.a === actionFilter;
 
@@ -4293,7 +4310,7 @@ function changeRemindPage(direction) {
 
 function renderReminders() {
     const container = document.getElementById('reminder-list-container');
-    
+
     // 1. LẤY GIÁ TRỊ BỘ LỌC
     const filterDate = document.getElementById('remind-filter-date').value;
     const filterStatus = currentRemindStatus; // Biến global
@@ -4302,16 +4319,16 @@ function renderReminders() {
     // 2. LỌC DỮ LIỆU CƠ BẢN (Date & Search)
     let baseList = window.reminders.filter(r => {
         const matchDate = !filterDate || r.dueDate === filterDate;
-        
+
         const content = (r.content || '').toLowerCase();
         const createdBy = (r.createdBy || '').toLowerCase();
         const assignTo = (Array.isArray(r.assignTo) ? r.assignTo.join(' ') : (r.assignTo || '')).toLowerCase();
-        
+
         const matchSearch = !searchTerm || 
                             content.includes(searchTerm) || 
                             createdBy.includes(searchTerm) || 
                             assignTo.includes(searchTerm);
-        
+
         return matchDate && matchSearch;
     });
 
@@ -4321,7 +4338,7 @@ function renderReminders() {
 
     const countPendingEl = document.getElementById('count-pending');
     if (countPendingEl) countPendingEl.textContent = countPending;
-    
+
     const countDoneEl = document.getElementById('count-done');
     if (countDoneEl) countDoneEl.textContent = countDone;
 
@@ -4418,7 +4435,7 @@ function showAddReminderModal() {
     document.getElementById('reminder-form').reset();
     document.getElementById('remind-id').value = '';
     document.getElementById('remind-date').value = new Date().toISOString().split('T')[0];
-    
+
     // Render Staff Checkbox
     const container = document.getElementById('staff-checklist-container');
     container.innerHTML = staff.map(s => `
@@ -4426,11 +4443,11 @@ function showAddReminderModal() {
             <input type="checkbox" name="selectedStaff" value="${s.name}"> ${s.name}
         </label>
     `).join('');
-    
+
     // Mặc định chọn "Tất cả"
     document.querySelector('input[name="assignType"][value="all"]').checked = true;
     toggleStaffSelect();
-    
+
     showModal('reminder-modal');
 }
 
@@ -4476,7 +4493,7 @@ async function saveReminderToSheet() {
     const date = document.getElementById('remind-date').value;
     const priority = document.getElementById('remind-priority').value;
     const assignType = document.querySelector('input[name="assignType"]:checked').value;
-    
+
     let assignTo = 'ALL';
     if (assignType === 'specific') {
         const checked = document.querySelectorAll('input[name="selectedStaff"]:checked');
@@ -4509,7 +4526,7 @@ async function saveReminderToSheet() {
         } else {
              renderReminders();
         }
-        
+
     } catch(e) {
         showNotification('Lỗi: ' + e.message, 'error');
     } finally {
@@ -4526,10 +4543,10 @@ async function toggleReminderStatus(id, date, newStatus) {
     const item = window.reminders.find(r => r.id == id);
     if(item) {
         item.isDone = newStatus;
-        
+
         // Vẽ lại bảng dữ liệu
         renderReminders(); 
-        
+
         // Cập nhật số đếm trên Tab (chấm đỏ)
         if (typeof updateReminderTabBadge === 'function') {
             updateReminderTabBadge();
@@ -4543,19 +4560,19 @@ async function toggleReminderStatus(id, date, newStatus) {
 async function deleteReminder(id, date) {
     // 1. Hỏi xác nhận Yes/No
     if(!(await showCustomConfirm("Bạn có chắc chắn muốn xóa vĩnh viễn công việc này?"))) return;
-    
+
     // Lưu lại danh sách cũ để phòng trường hợp lỗi thì khôi phục
     const originalList = [...window.reminders];
-    
+
     // 2. Xóa trên giao diện ngay lập tức
     window.reminders = window.reminders.filter(r => r.id != id);
     renderReminders();
-    
+
     // Cập nhật số đếm trên Tab
     if (typeof updateReminderTabBadge === 'function') {
         updateReminderTabBadge();
     }
-    
+
     // 3. Gửi lệnh xóa xuống Server
     try {
         await callGAS(
@@ -4575,12 +4592,12 @@ function updateReminderTabBadge() {
     // Đếm số việc chưa xong (isDone == false)
     const pendingCount = window.reminders ? window.reminders.filter(r => !r.isDone).length : 0;
     const badge = document.getElementById('reminder-tab-badge');
-    
+
     if (badge) {
         badge.textContent = pendingCount > 99 ? '99+' : pendingCount;
         // Chỉ hiện khi có việc cần làm (> 0)
         badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
-        
+
         // Hiệu ứng rung nhẹ khi có việc mới (nếu muốn)
         if (pendingCount > 0) {
             badge.style.animation = 'none';
@@ -4592,11 +4609,11 @@ function updateReminderTabBadge() {
 
 function switchRemindFilter(status) {
     currentRemindStatus = status;
-    
+
     // Update UI active class
     document.querySelectorAll('.remind-tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${status}`).classList.add('active');
-    
+
     // Reset page và render lại
     remindCurrentPage = 1;
     renderReminders();
@@ -4608,15 +4625,15 @@ async function handleTableStatusChange(selectEl, customerId, currentStatus) {
 
     const badge = document.getElementById(`status-badge-${customerId}`);
     const textSpan = document.getElementById(`status-text-${customerId}`);
-    
+
     // Lưu style cũ
     const oldStyle = badge.getAttribute('style');
     const oldClass = badge.className;
-    
+
     // UI Update ngay lập tức
     const selectedOption = selectEl.options[selectEl.selectedIndex];
     const newColor = selectedOption.getAttribute('data-color') || '#6B7280';
-    
+
     textSpan.textContent = newStatus || 'Chưa xác định';
     badge.className = 'status-badge'; 
     badge.style.background = hexToRgba(newColor, 0.15);
@@ -4761,4 +4778,3 @@ window.editReminder = editReminder;
 window.changeRemindPage = changeRemindPage;
 window.updateReminderTabBadge = updateReminderTabBadge;
 window.switchRemindFilter = switchRemindFilter;
-window.handleTableStatusChange = handleTableStatusChange;
