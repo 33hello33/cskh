@@ -108,11 +108,11 @@ async function initApp() {
         sources = result.sources;
         customers = result.customers;
       invoiceData = result.invoices;
-       console.log(result)
         window.allHistoryData = result.history || [];
         window.reminders = result.reminders || [];
         renderReminders();
         updateReminderTabBadge();
+       console.log("INVOICES:", JSON.stringify(res.invoices, null, 2));
         // -----------------------------------------
 
         showUserInfo();
