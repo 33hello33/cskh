@@ -571,93 +571,86 @@ function renderStatusChart() {
 // Render staff chart
 function renderStaffStackedChart() {
     const ctx = document.getElementById('staffChart').getContext('2d');
-
+    
     if (staffChart) {
         staffChart.destroy();
     }
 
-    const filteredCustomers = getFilteredCustomers('created');
+    const monthlyRevenue = {};
+    const currentDate = new Date();
 
-    // Tạo dữ liệu cho stacked chart
-    const staffData = {};
-    const statusList = statuses.map(s => s.name);
-
-    // THÊM: Lọc staff theo quyền
-    let staffToShow = staff;
-    if (currentUser && !currentUser.isManager) {
-        // Nếu là nhân viên, chỉ hiển thị nhân viên hiện tại
-        staffToShow = staff.filter(s => s.name === currentUser.name);
+    // 1. Khởi tạo dữ liệu cho 12 tháng gần nhất
+    for (let i = 11; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        monthlyRevenue[monthKey] = 0;
     }
 
-    // Khởi tạo dữ liệu cho mỗi nhân viên (đã lọc)
-    staffToShow.forEach(s => {
-        staffData[s.name] = {};
-        statusList.forEach(status => {
-            staffData[s.name][status] = 0;
-        });
-        staffData[s.name]['Chưa xác định'] = 0;
-    });
-
-    // Chỉ thêm "Chưa phân công" nếu là manager
-    if (!currentUser || currentUser.isManager) {
-        staffData['Chưa phân công'] = {};
-        statusList.forEach(status => {
-            staffData['Chưa phân công'][status] = 0;
-        });
-        staffData['Chưa phân công']['Chưa xác định'] = 0;
-    }
-
-    // Đếm khách hàng từ filtered customers
-    filteredCustomers.forEach(customer => {
-        const assignedStaff = customer.assignedStaff || 'Chưa phân công';
-        const status = customer.status || 'Chưa xác định';
-
-        if (staffData[assignedStaff]) {
-            staffData[assignedStaff][status]++;
+    // 2. Tích lũy doanh thu từ dữ liệu invoice
+    invoiceData.forEach(inv => {
+        if (inv.ngaylap) {
+            // Chuyển đổi ngaylap thành đối tượng Date
+            const date = new Date(inv.ngaylap);
+            const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            
+            // Nếu tháng này nằm trong khung 12 tháng, cộng dồn số tiền đã đóng
+            if (monthlyRevenue[monthKey] !== undefined) {
+                // Đảm bảo dadong là số (loại bỏ dấu phẩy nếu có và chuyển kiểu)
+                const amount = parseFloat(inv.dadong.toString().replace(/,/g, '')) || 0;
+                monthlyRevenue[monthKey] += amount;
+            }
         }
     });
 
-    // Phần còn lại giữ nguyên...
-    const staffNames = Object.keys(staffData);
-    const allStatuses = [...statusList, 'Chưa xác định'];
-
-    const datasets = allStatuses.map((status, index) => {
-        const color = status === 'Chưa xác định' ? '#6B7280' : getStatusColor(status);
-
-        return {
-            label: status,
-            data: staffNames.map(staff => staffData[staff][status]),
-            backgroundColor: color,
-            borderColor: color,
-            borderWidth: 1
-        };
+    const months = Object.keys(monthlyRevenue);
+    const monthLabels = months.map(month => {
+        const [year, monthNum] = month.split('-');
+        return `${monthNum}/${year}`;
     });
 
+    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
+
     staffChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
-            labels: staffNames,
-            datasets: datasets
+            labels: monthLabels,
+            datasets: [{
+                label: 'Doanh thu thực thu',
+                data: Object.values(monthlyRevenue),
+                borderColor: successColor,
+                backgroundColor: hexToRgba(successColor, 0.1),
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                borderWidth: 3
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
             plugins: {
-                legend: commonLegendConfig
+                legend: commonLegendConfig,
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
+                        }
+                    }
+                }
             },
             scales: {
-                x: {
-                    stacked: true
-                },
                 y: {
-                    stacked: true,
                     beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'VNĐ'
+                    },
                     ticks: {
-                        stepSize: 1
+                        callback: function(value) {
+                            // Rút gọn hiển thị trục Y (ví dụ 1.000.000 -> 1M)
+                            if (value >= 1000000) return (value / 1000000) + 'M';
+                            return new Intl.NumberFormat('vi-VN').format(value);
+                        }
                     }
                 }
             }
