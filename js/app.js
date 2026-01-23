@@ -3208,7 +3208,8 @@ async function refreshData() {
             statuses = result.statuses;
             sources = result.sources;
             customers = result.customers;
-
+            invoiceData = result.invoices || [];
+           
             window.allHistoryData = result.history || [];
             window.reminders = result.reminders || [];
             updateReminderTabBadge();
