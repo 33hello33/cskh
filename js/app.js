@@ -1097,29 +1097,27 @@ function renderSourceRevenueChart() {
         sourceRevenueChart.destroy();
     }
     
-    const sourceRevenue = {};
+    const sourceCustomerCount = {}; // Đổi tên biến để phản ánh đúng mục đích (thống kê số khách)
     
     // Khởi tạo dữ liệu
     sources.forEach(source => {
-        sourceRevenue[source.name] = 0;
+        sourceCustomerCount[source.name] = 0;
     });
-    sourceRevenue['Chưa xác định'] = 0;
     
-    // UPDATED: Tính doanh thu từ orders array trong khoảng thời gian
+    // Thống kê số lượng khách hàng theo nguồn
     getFilteredCustomers('created').forEach(customer => {
-        if (customer.orders && customer.orders.length > 0) {
-            customer.orders.forEach(order => {
-                if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
-                    const source = customer.source || 'Chưa xác định';
-                    if (sourceRevenue[source] !== undefined) {
-                        sourceRevenue[source] += order.orderValue || 0;
-                    }
-                }
-            });
+        const source = customer.source || 'Chưa xác định';
+        
+        // Nếu nguồn chưa có trong đối tượng khởi tạo, tạo mới nó
+        if (sourceCustomerCount[source] === undefined) {
+            sourceCustomerCount[source] = 0;
         }
+        
+        // Tăng biến đếm thêm 1 cho mỗi khách hàng
+        sourceCustomerCount[source] += 1;
     });
     
-    const sourceNames = Object.keys(sourceRevenue);
+    const sourceNames = Object.keys(sourceCustomerCount);
     const colors = generateChartColors(sourceNames.length);
     
     sourceRevenueChart = new Chart(ctx, {
@@ -1127,7 +1125,8 @@ function renderSourceRevenueChart() {
         data: {
             labels: sourceNames,
             datasets: [{
-                data: Object.values(sourceRevenue),
+                label: 'Số lượng khách hàng', // Nhãn cho dataset
+                data: Object.values(sourceCustomerCount),
                 backgroundColor: colors,
                 borderColor: colors,
                 borderWidth: 2
@@ -1142,7 +1141,8 @@ function renderSourceRevenueChart() {
                     callbacks: {
                         label: function(context) {
                             const value = context.raw;
-                            return context.label + ': ' + new Intl.NumberFormat('vi-VN').format(value);
+                            // Hiển thị định dạng số nguyên cho số lượng khách
+                            return context.label + ': ' + value + ' khách hàng';
                         }
                     }
                 }
