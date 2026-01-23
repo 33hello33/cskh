@@ -1008,81 +1008,85 @@ function renderTrendChart() {
 }
 
 // BIỂU ĐỒ MỚI 1: Khách hàng theo nguồn
-function renderSourceChart() {
-    const ctx = document.getElementById('sourceChart').getContext('2d');
-
-    if (sourceChart) {
-        sourceChart.destroy();
-    }
-
+function renderSourceChart() 
+{
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
     const filteredCustomers = getFilteredCustomers('created');
 
-    const sourceData = {};
+    if (monthlyChart) {
+        monthlyChart.destroy();
+    }
 
-    // Khởi tạo dữ liệu cho tất cả nguồn khách
-    sources.forEach(source => {
-        sourceData[source.name] = {
-            total: 0,
-            closed: 0
+    const monthlyData = {};
+    const currentDate = new Date();
+
+    // Khởi tạo khung dữ liệu cho 12 tháng gần nhất
+    for (let i = 11; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        monthlyData[monthKey] = {
+            newCustomers: 0
         };
-    });
-    sourceData['Chưa xác định'] = { total: 0, closed: 0 };
+    }
 
-    // Đếm khách hàng từ filtered customers
+    // Tự động tăng biến đếm khi có khách hàng mới trong tháng
     filteredCustomers.forEach(customer => {
-        const source = customer.source || 'Chưa xác định';
-        if (sourceData[source]) {
-            sourceData[source].total++;
-            if (customer.status === 'Đã chốt') {
-                sourceData[source].closed++;
+        if (customer.createdDate) {
+            const date = new Date(customer.createdDate);
+            const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            
+            // Nếu tháng của khách hàng nằm trong danh sách 12 tháng, tăng biến đếm
+            if (monthlyData[monthKey]) {
+                monthlyData[monthKey].newCustomers++;
             }
         }
     });
 
-    const sourceNames = Object.keys(sourceData);
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
-    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
+    const months = Object.keys(monthlyData);
+    const monthLabels = months.map(month => {
+        const [year, monthNum] = month.split('-');
+        return `${monthNum}/${year}`;
+    });
 
-    sourceChart = new Chart(ctx, {
-        type: 'bar',
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
+
+    monthlyChart = new Chart(ctx, {
+        type: 'line',
         data: {
-            labels: sourceNames,
+            labels: monthLabels,
             datasets: [
                 {
-                    label: 'Đã chốt', // ĐỔI THỨ TỰ: Đã chốt trước (nằm dưới)
-                    data: sourceNames.map(name => sourceData[name].closed),
-                    backgroundColor: successColor,
-                    borderColor: successColor,
-                    borderWidth: 1
-                },
-                {
-                    label: 'Chưa chốt', // Chưa chốt sau (nằm trên)
-                    data: sourceNames.map(name => sourceData[name].total - sourceData[name].closed),
-                    backgroundColor: primaryColor,
+                    label: 'Số lượng khách hàng mới',
+                    data: months.map(month => monthlyData[month].newCustomers),
                     borderColor: primaryColor,
-                    borderWidth: 1
+                    backgroundColor: hexToRgba(primaryColor, 0.1),
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }
             ]
         },
         options: {
-            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
             plugins: {
-                legend: commonLegendConfig
+                legend: commonLegendConfig,
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
             },
             scales: {
-                x: { // SỬA: x thay vì y (vì horizontal)
-                    stacked: true,
+                y: {
                     beginAtZero: true,
-                    ticks: { stepSize: 1 }
-                },
-                y: { // SỬA: y thay vì x (vì horizontal)
-                    stacked: true
+                    ticks: {
+                        stepSize: 1 // Đảm bảo hiển thị số nguyên vì đơn vị là con người
+                    },
+                    title: {
+                        display: true,
+                        text: 'Khách hàng'
+                    }
                 }
             }
         }
