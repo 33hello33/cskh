@@ -666,7 +666,7 @@ function renderStaffStackedChart() {
 }
 
 
-function renderSourceRevenuePerformanceChart() {
+function renderStaffPerformanceChart() {
     const ctx = document.getElementById('staffPerformanceChart').getContext('2d');
     
     if (staffPerformanceChart) {
