@@ -1130,7 +1130,6 @@ function renderSourceRevenueChart() {
         sourceCustomerCount[source] += 1;
     }});
 
-    const sourceNames = Object.keys(sourceRevenue);
     const sourceNames = Object.keys(sourceCustomerCount);
     const colors = generateChartColors(sourceNames.length);
 
