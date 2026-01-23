@@ -1128,7 +1128,7 @@ function renderSourceRevenueChart() {
         
         // Tăng biến đếm thêm 1 cho mỗi khách hàng
         sourceCustomerCount[source] += 1;
-    });
+    }});
 
     const sourceNames = Object.keys(sourceRevenue);
     const sourceNames = Object.keys(sourceCustomerCount);
