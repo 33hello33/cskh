@@ -1,4 +1,4 @@
-   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKruyChnJh8PRhrtcTlYt8GHYkLXJsjVXyspjWgTZy9yOHpKebcsPW-a5dJZgNdXZG6A/exec";
+   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfObJiGRrjA749EIM230loYjVbFy7oNsGhr-sXXjdzt3EWjuQSdbWI-WOhyiv-czFXSw/exec";
 
 async function callGAS(functionName, ...args) {
     try {
