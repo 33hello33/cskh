@@ -587,7 +587,13 @@ function renderStaffStackedChart() {
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
         monthlyRevenue[monthKey] = 0;
     }
-
+   
+// SỬA TẠI ĐÂY: Thêm kiểm tra invoiceData
+    if (!invoiceData || !Array.isArray(invoiceData)) {
+        console.warn("invoiceData chưa sẵn sàng hoặc không phải mảng");
+        return; 
+    }
+   
     // 2. Tích lũy doanh thu từ dữ liệu invoice
     invoiceData.forEach(inv => {
         if (inv.ngaylap) {
