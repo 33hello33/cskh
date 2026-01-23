@@ -1056,7 +1056,7 @@ function renderSourceChart()
             labels: monthLabels,
             datasets: [
                 {
-                    label: 'Số lượng khách hàng mới',
+                    label: 'Số lượng học viên mới',
                     data: months.map(month => monthlyData[month].newCustomers),
                     borderColor: primaryColor,
                     backgroundColor: hexToRgba(primaryColor, 0.1),
