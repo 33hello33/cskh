@@ -1010,11 +1010,11 @@ function renderTrendChart() {
 // BIỂU ĐỒ MỚI 1: Khách hàng theo nguồn
 function renderSourceChart() 
 {
-    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    const ctx = document.getElementById('sourceChart').getContext('2d');
     const filteredCustomers = getFilteredCustomers('created');
 
-    if (monthlyChart) {
-        monthlyChart.destroy();
+    if (sourceChart) {
+        sourceChart.destroy();
     }
 
     const monthlyData = {};
@@ -1050,7 +1050,7 @@ function renderSourceChart()
 
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
 
-    monthlyChart = new Chart(ctx, {
+    sourceChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: monthLabels,
