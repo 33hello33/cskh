@@ -1129,7 +1129,7 @@ function renderSourceRevenueChart() {
         data: {
             labels: sourceNames,
             datasets: [{
-                label: 'Số lượng khách hàng', // Nhãn cho dataset
+                label: 'Số lượng học viên', // Nhãn cho dataset
                 data: Object.values(sourceCustomerCount),
                 backgroundColor: colors,
                 borderColor: colors,
@@ -1146,7 +1146,7 @@ function renderSourceRevenueChart() {
                         label: function(context) {
                             const value = context.raw;
                             // Hiển thị định dạng số nguyên cho số lượng khách
-                            return context.label + ': ' + value + ' khách hàng';
+                            return context.label + ': ' + value + ' học viên';
                         }
                     }
                 }
