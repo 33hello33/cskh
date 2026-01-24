@@ -910,7 +910,7 @@ function renderTrendChart() {
         data: {
             labels: monthLabels,
             datasets: [{
-                label: 'Doanh thu thực thu',
+                label: 'Lợi nhuận từ Tổng thu học phí + bán hàng - phiếu chi - phiếu nhập kho - chi lương',
                 data: Object.values(monthlyRevenue),
                 borderColor: successColor,
                 backgroundColor: hexToRgba(successColor, 0.1),
