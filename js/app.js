@@ -112,7 +112,7 @@ async function initApp() {
         window.reminders = result.reminders || [];
         renderReminders();
         updateReminderTabBadge();
-       console.log("INVOICES:", JSON.stringify(result.invoices, null, 2));
+
         // -----------------------------------------
 
         showUserInfo();
