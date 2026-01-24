@@ -815,23 +815,17 @@ function renderMonthlyChart()
     const monthlyData = {};
     const currentDate = new Date();
 
-    // 1. Khởi tạo 12 tháng gần nhất
     for (let i = 11; i >= 0; i--) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        monthlyData[monthKey] = {
-            newCustomers: 0,
-            revenue: 0 // Thêm trường lưu tổng doanh thu
-        };
+        monthlyData[monthKey] = { revenue: 0 };
     }
 
-    // 2. Tích lũy doanh thu từ invoiceData (Bỏ qua filter giao diện để lấy đủ 12 tháng)
     if (Array.isArray(invoiceData)) {
         invoiceData.forEach(inv => {
             if (inv.ngaylap) {
                 const date = new Date(inv.ngaylap);
                 const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                
                 if (monthlyData[monthKey]) {
                     const amount = parseInt(inv.dadong?.toString().replace(/[^\d]/g, '')) || 0;
                     monthlyData[monthKey].revenue += amount;
@@ -846,12 +840,11 @@ function renderMonthlyChart()
         return `${monthNum}/${year}`;
     });
 
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
     const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
 
     monthlyChart = new Chart(ctx, {
-        type: 'bar', // Chuyển sang Bar để có thân cột
-        plugins: [ChartDataLabels], // Kích hoạt plugin hiển thị số liệu trên cột
+        type: 'bar',
+        plugins: [ChartDataLabels],
         data: {
             labels: monthLabels,
             datasets: [
@@ -863,8 +856,10 @@ function renderMonthlyChart()
                     borderWidth: 1,
                     borderRadius: 4,
                     datalabels: {
-                        anchor: 'center', // Nằm giữa thân cột
-                        align: 'center'   // Căn giữa
+                        anchor: 'center',
+                        align: 'center',
+                        // THÊM: Xoay dọc chữ (-90 độ là dọc từ dưới lên)
+                        rotation: -90 
                     }
                 }
             ]
@@ -875,16 +870,16 @@ function renderMonthlyChart()
             plugins: {
                 legend: commonLegendConfig,
                 datalabels: {
-                    color: '#ffffff', // Chữ màu trắng để nổi bật trên thân cột
+                    color: '#ffffff',
                     font: {
                         weight: 'bold',
-                        size: 10
+                        size: 11 // Có thể tăng size nhẹ vì xoay dọc chiếm ít chiều ngang hơn
                     },
                     formatter: function(value) {
-                        if (value === 0) return ''; // Không hiện nếu bằng 0
-                        // Định dạng rút gọn: 1.2M hoặc 500K
-                        if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
-                        if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+                        if (value === 0) return '';
+                        // Định dạng tiền tệ đầy đủ hoặc rút gọn tùy bạn, ở đây dùng định dạng dễ đọc
+                        if (value >= 1000000) return (value / 1000000).toFixed(1) + ' Tr';
+                        if (value >= 1000) return (value / 1000).toFixed(0) + ' K';
                         return value;
                     }
                 },
@@ -1012,8 +1007,6 @@ function renderSourceChart()
 {
     const ctx = document.getElementById('sourceChart').getContext('2d');
     
-    // THAY ĐỔI: Sử dụng toàn bộ danh sách 'customers' thay vì 'filteredCustomers' 
-    // để không bị ảnh hưởng bởi bộ lọc "Tháng này" trên giao diện.
     const allCustomers = customers; 
 
     if (sourceChart) {
@@ -1023,7 +1016,6 @@ function renderSourceChart()
     const monthlyData = {};
     const currentDate = new Date();
 
-    // Khởi tạo khung dữ liệu cho 12 tháng gần nhất
     for (let i = 11; i >= 0; i--) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -1032,15 +1024,11 @@ function renderSourceChart()
         };
     }
 
-    // Duyệt qua toàn bộ khách hàng
     allCustomers.forEach(customer => {
         if (customer.createdDate) {
-            // Đảm bảo parse ngày chính xác từ chuỗi YYYY-MM-DD
             const date = new Date(customer.createdDate);
             if (!isNaN(date.getTime())) {
                 const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                
-                // Nếu tháng của khách hàng nằm trong danh sách 12 tháng, tăng biến đếm
                 if (monthlyData[monthKey]) {
                     monthlyData[monthKey].newCustomers++;
                 }
@@ -1058,6 +1046,8 @@ function renderSourceChart()
 
     sourceChart = new Chart(ctx, {
         type: 'line',
+        // Kích hoạt plugin hiển thị nhãn dữ liệu
+        plugins: [ChartDataLabels], 
         data: {
             labels: monthLabels,
             datasets: [
@@ -1068,19 +1058,43 @@ function renderSourceChart()
                     backgroundColor: hexToRgba(primaryColor, 0.1),
                     tension: 0.4,
                     fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointRadius: 6, // Tăng kích thước điểm để dễ nhìn số liệu
+                    pointHoverRadius: 8,
+                    // Cấu hình nhãn dữ liệu cho riêng tập dữ liệu này
+                    datalabels: {
+                        align: 'top',    // Hiển thị phía trên điểm nút
+                        anchor: 'end',   // Neo vào điểm cuối của dữ liệu
+                        offset: 4,       // Khoảng cách so với điểm
+                        color: primaryColor, // Màu chữ
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        formatter: function(value) {
+                            return value > 0 ? value : ''; // Chỉ hiện nếu số lượng > 0
+                        }
+                    }
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            // Đảm bảo không bị cắt mất nhãn ở phía trên cùng của biểu đồ
+            layout: {
+                padding: {
+                    top: 25 
+                }
+            },
             plugins: {
                 legend: commonLegendConfig,
                 tooltip: {
                     mode: 'index',
                     intersect: false
+                },
+                // Vô hiệu hóa nhãn dữ liệu mặc định cho các thành phần khác nếu cần
+                datalabels: {
+                    display: true 
                 }
             },
             scales: {
