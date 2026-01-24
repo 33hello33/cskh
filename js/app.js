@@ -714,7 +714,7 @@ function renderStaffPerformanceChart()
     // 2. Tạo bản đồ tra cứu nhanh: customer.id -> customer.source (Lớp)
     const customerSourceMap = {};
     customers.forEach(c => {
-        customerSourceMap[c.id] = c.source || 'Chưa xác định';
+        customerSourceMap[c.id] = c.source;
     });
     
     // 3. Tính toán tổng doanh thu thực thu từ dữ liệu hóa đơn (invoiceData)
@@ -722,7 +722,7 @@ function renderStaffPerformanceChart()
         invoiceData.forEach(inv => {
             // Xác định lớp của học viên dựa trên mã học viên (inv.id)
             const mahv = inv.id; 
-            const source = customerSourceMap[mahv] || 'Chưa xác định';
+            const source = customerSourceMap[mahv] ;
             
             // Làm sạch và chuyển đổi số tiền đã đóng (dadong)
             // Loại bỏ tất cả ký tự không phải số để tránh lỗi định dạng tiền tệ
@@ -795,7 +795,7 @@ function renderMonthlyChart()
     // 2. Tạo một bản đồ (Map) để tra cứu nhanh: customer.id -> customer.source
     const customerSourceMap = {};
     customers.forEach(c => {
-        customerSourceMap[c.id] = c.source || 'Chưa xác định';
+        customerSourceMap[c.id] = c.source;
     });
     
     // 3. Tính toán tổng nợ từ dữ liệu hóa đơn (invoiceData)
@@ -803,7 +803,7 @@ function renderMonthlyChart()
         invoiceData.forEach(inv => {
             // Lấy mã học viên (mahv) từ inv.id (theo ánh xạ của bạn)
             const mahv = inv.id; 
-            const source = customerSourceMap[mahv] || 'Chưa xác định';
+            const source = customerSourceMap[mahv];
             
             // Làm sạch dữ liệu tiền nợ (loại bỏ dấu chấm, chữ 'đ', v.v.)
             const debtAmount = parseInt(inv.conno.toString().replace(/[^\d]/g, '')) || 0;
@@ -1073,7 +1073,7 @@ function renderSourceRevenueChart() {
     
     // Thống kê số lượng khách hàng theo nguồn
     getFilteredCustomers('created').forEach(customer => {
-        const source = customer.source || 'Chưa xác định';
+        const source = customer.source;
         
         // Nếu nguồn chưa có trong đối tượng khởi tạo, tạo mới nó
         if (sourceCustomerCount[source] === undefined) {
@@ -1228,39 +1228,53 @@ function switchTab(tabName) {
 
 // Render top customers
 function renderTopCustomersByRevenue() {
-    // Tính tổng doanh thu cho mỗi khách hàng từ orders trong khoảng thời gian
-    const customerRevenue = getFilteredCustomers('created').map(customer => {
-        let totalRevenue = 0;
+    // 1. Tạo Map để cộng dồn doanh thu cho từng khách hàng từ invoiceData
+    const revenueByCustomer = {};
 
-        if (customer.orders && customer.orders.length > 0) {
-            customer.orders.forEach(order => {
-                if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
-                    totalRevenue += order.orderValue || 0;
+    if (Array.isArray(invoiceData)) {
+        invoiceData.forEach(inv => {
+            // Kiểm tra ngày lập hóa đơn có nằm trong khoảng thời gian lọc hay không
+            if (inv.ngaylap && isDateInRange(inv.ngaylap, 'closed')) {
+                const customerId = inv.id; // mahv
+                
+                // Làm sạch dữ liệu số tiền dadong (xóa dấu chấm, đơn vị đ...)
+                const amount = parseInt(inv.dadong.toString().replace(/[^\d]/g, '')) || 0;
+
+                if (amount > 0) {
+                    revenueByCustomer[customerId] = (revenueByCustomer[customerId] || 0) + amount;
                 }
-            });
-        }
+            }
+        });
+    }
 
+    // 2. Chuyển đổi dữ liệu Map thành mảng để hiển thị Top 10
+    const topRevenueData = Object.keys(revenueByCustomer).map(id => {
+        // Tìm thông tin tên khách hàng từ danh sách customers hiện tại
+        const customerInfo = customers.find(c => String(c.id) === String(id));
         return {
-            ...customer,
-            revenue: totalRevenue
+            id: id,
+            name: customerInfo.name 
+            revenue: revenueByCustomer[id]
         };
     })
-    .filter(customer => customer.revenue > 0)
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 10);
+    .sort((a, b) => b.revenue - a.revenue) // Sắp xếp giảm dần
+    .slice(0, 10); // Lấy top 10
 
-    const html = customerRevenue.map((customer, index) => `
+    // 3. Render HTML
+    const html = topRevenueData.map((item, index) => `
         <div class="top-item">
             <div class="top-item-info">
                 <div class="top-item-rank">${index + 1}</div>
-                <span>KH${customer.id} - ${customer.name}</span>
+                <span>KH${item.id} - ${item.name}</span>
             </div>
-            <span class="top-item-count">${new Intl.NumberFormat('vi-VN').format(customer.revenue)}</span>
+            <span class="top-item-count">${new Intl.NumberFormat('vi-VN').format(item.revenue)}</span>
         </div>
     `).join('');
 
-    document.getElementById('topCustomersList').innerHTML = html || 
-        '<p class="text-muted text-center">Chưa có dữ liệu doanh thu</p>';
+    const container = document.getElementById('topCustomersList');
+    if (container) {
+        container.innerHTML = html || '<p class="text-muted text-center">Chưa có dữ liệu doanh thu trong kỳ</p>';
+    }
 }
 
 // Render customers
