@@ -419,14 +419,14 @@ function isToday(dateString) {
 }
 
 function isThisMonth(dateString) {
-    if (!dateString) return false; [cite: 1, 2]
+    if (!dateString) return false;
 
-    const today = new Date(); [cite: 2]
-    const checkDate = new Date(dateString); [cite: 2]
+    const today = new Date();
+    const checkDate = new Date(dateString);
 
     // Kiểm tra trùng năm và trùng tháng
-    return today.getFullYear() === checkDate.getFullYear() && [cite: 2]
-           today.getMonth() === checkDate.getMonth(); [cite: 2]
+    return today.getFullYear() === checkDate.getFullYear() &&
+           today.getMonth() === checkDate.getMonth(); 
 }
 
 // Thêm function render reports
@@ -458,11 +458,11 @@ function renderOverviewCards() {
     let closedCount = 0;
 
     filteredCustomers.forEach(customer => {
+        closedCount++;
         if (customer.orders && customer.orders.length > 0) {
             customer.orders.forEach(order => {
                 if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
-                    totalRevenue += order.orderValue || 0;
-                    closedCount++;
+                    totalRevenue += order.orderValue || 0
                 }
             });
         }
