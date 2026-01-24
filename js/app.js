@@ -572,7 +572,7 @@ function renderStatusChart()
             labels: [labelThu, labelChi],
             datasets: [{
                 data: [totalThu, totalChi],
-                backgroundColor: ['#10B981', '#EF4444'], // Thu xanh, Chi đỏ [cite: 170]
+                backgroundColor: ['#E462A8', '#6C63FF'], // Thu xanh, Chi đỏ [cite: 170]
                 borderColor: '#ffffff',
                 borderWidth: 2
             }]
@@ -710,77 +710,64 @@ function renderStaffPerformanceChart()
 {
     const ctx = document.getElementById('staffPerformanceChart').getContext('2d');
     
+    // Hủy biểu đồ cũ nếu tồn tại để vẽ biểu đồ mới
     if (staffPerformanceChart) {
         staffPerformanceChart.destroy();
     }
     
-    const filteredCustomers = getFilteredCustomers('created');
-    const staffSales = {};
+    const sourceRevenue = {}; 
     
-    // 1. Khởi tạo dữ liệu
-    staff.forEach(s => {
-        staffSales[s.name] = {
-            totalCustomers: 0,
-            closedCustomers: 0,
-            closeRate: 0
-        };
+    // 1. Khởi tạo doanh thu bằng 0 cho tất cả các lớp (sources) hiện có
+    sources.forEach(source => {
+        sourceRevenue[source.name] = 0;
+    });
+
+    // 2. Tạo bản đồ tra cứu nhanh: customer.id -> customer.source (Lớp)
+    const customerSourceMap = {};
+    customers.forEach(c => {
+        customerSourceMap[c.id] = c.source || 'Chưa xác định';
     });
     
-    // 2. Tính toán số liệu
-    filteredCustomers.forEach(customer => {
-        const assignedStaff = customer.assignedStaff;
-        if (assignedStaff && staffSales[assignedStaff]) {
-            staffSales[assignedStaff].totalCustomers++;
-            const closedStatuses = ['Đã chốt', 'Closed', 'Thành công', 'Đã mua'];
-            if (customer.status && closedStatuses.includes(customer.status)) {
-                staffSales[assignedStaff].closedCustomers++;
+    // 3. Tính toán tổng doanh thu thực thu từ dữ liệu hóa đơn (invoiceData)
+    if (Array.isArray(invoiceData)) {
+        invoiceData.forEach(inv => {
+            // Xác định lớp của học viên dựa trên mã học viên (inv.id)
+            const mahv = inv.id; 
+            const source = customerSourceMap[mahv] || 'Chưa xác định';
+            
+            // Làm sạch và chuyển đổi số tiền đã đóng (dadong)
+            const amountReceived = parseInt(inv.dadong.toString().replace(/[^\d]/g, '')) || 0;
+            
+            if (sourceRevenue[source] === undefined) {
+                sourceRevenue[source] = 0;
             }
-        }
-    });
+            
+            // Cộng dồn vào tổng doanh thu của lớp tương ứng
+            sourceRevenue[source] += amountReceived;
+        });
+    }
     
-    // 3. Tính tỷ lệ chốt và chuẩn bị Label kèm số liệu
-    const staffNames = Object.keys(staffSales);
-    const displayLabels = staffNames.map(name => {
-        const data = staffSales[name];
-        if (data.totalCustomers > 0) {
-            data.closeRate = ((data.closedCustomers / data.totalCustomers) * 100).toFixed(1);
-        }
-        // Gộp số liệu vào nhãn: "Tên NV (Chốt: X - Tỷ lệ: Y%)"
-        return `${name} (Chốt: ${data.closedCustomers} - ${data.closeRate}%)`;
-    });
+    // 4. Chuẩn bị dữ liệu và định dạng nhãn kèm số tiền
+    const formatter = new Intl.NumberFormat('vi-VN');
+    const sourceNames = Object.keys(sourceRevenue).filter(name => sourceRevenue[name] > 0);
+    const revenueValues = sourceNames.map(name => sourceRevenue[name]);
     
-    const closedData = staffNames.map(name => staffSales[name].closedCustomers);
-    const closeRateData = staffNames.map(name => staffSales[name].closeRate);
+    // Tạo mảng nhãn hiển thị ở Legend kèm số tiền: "Tên lớp: 1.000.000 đ"
+    const displayLabels = sourceNames.map(name => `${name}: ${formatter.format(sourceRevenue[name])} đ`);
     
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
-    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
+    const colors = generateChartColors(sourceNames.length);
     
+    // 5. Khởi tạo Pie Chart
     staffPerformanceChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'pie',
         data: {
-            labels: staffNames, // Trục X vẫn giữ tên nhân viên gốc
-            datasets: [
-                {
-                    type: 'line',
-                    label: 'Tỷ lệ chốt (%)',
-                    data: closeRateData,
-                    borderColor: successColor,
-                    backgroundColor: successColor,
-                    borderWidth: 3,
-                    fill: false,
-                    tension: 0.4,
-                    yAxisID: 'y'
-                },
-                {
-                    type: 'bar',
-                    label: 'Số khách hàng đã chốt',
-                    data: closedData,
-                    backgroundColor: primaryColor,
-                    borderColor: primaryColor,
-                    borderWidth: 1,
-                    yAxisID: 'y1'
-                }
-            ]
+            labels: displayLabels, // Sử dụng nhãn đã kèm số tiền
+            datasets: [{
+                data: revenueValues,
+                backgroundColor: colors,
+                borderColor: '#ffffff',
+                borderWidth: 2
+            }]
         },
         options: {
             responsive: true,
@@ -789,43 +776,27 @@ function renderStaffPerformanceChart()
                 legend: {
                     display: true,
                     position: 'right', // Đưa chú thích vào góc bên phải
-                    align: 'start',    // Căn lề từ phía trên
+                    align: 'start',    // Căn nhãn từ trên xuống dưới
                     labels: {
                         boxWidth: 12,
                         padding: 15,
-                        font: { size: 11 },
-                        // Hàm render lại nhãn Legend để hiển thị thông tin chi tiết kèm số liệu
-                        generateLabels: (chart) => {
-                            return staffNames.map((name, i) => ({
-                                text: displayLabels[i],
-                                fillStyle: i % 2 === 0 ? successColor : primaryColor, // Minh họa màu theo dataset
-                                strokeStyle: i % 2 === 0 ? successColor : primaryColor,
-                                lineWidth: 1,
-                                hidden: false,
-                                index: i
-                            }));
+                        font: {
+                            size: 11,
+                            weight: 'bold'
                         }
                     }
                 },
                 tooltip: {
-                    mode: 'index',
-                    intersect: false
-                }
-            },
-            scales: {
-                y: {
-                    type: 'linear',
-                    position: 'left',
-                    beginAtZero: true,
-                    title: { display: true, text: 'Tỷ lệ chốt (%)' }
-                },
-                y1: {
-                    type: 'linear',
-                    position: 'right',
-                    beginAtZero: true,
-                    title: { display: true, text: 'Số KH đã chốt' },
-                    grid: { drawOnChartArea: false },
-                    ticks: { stepSize: 1 }
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            // Lấy lại tên lớp gốc (không kèm tiền) để hiển thị trong tooltip cho gọn
+                            const sourceName = sourceNames[context.dataIndex];
+                            return `${sourceName}: ${formatter.format(value)} VNĐ (${percentage}%)`;
+                        }
+                    }
                 }
             }
         }
