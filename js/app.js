@@ -1253,7 +1253,7 @@ function renderTopCustomersByRevenue() {
         const customerInfo = customers.find(c => String(c.id) === String(id));
         return {
             id: id,
-            name: customerInfo.name, 
+            name: customerInfo.name : 'Không xác định', 
             revenue: revenueByCustomer[id]
         };
     })
