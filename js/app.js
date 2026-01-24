@@ -808,176 +808,86 @@ function renderMonthlyChart()
 {
     const ctx = document.getElementById('monthlyChart').getContext('2d');
     
+    // Hủy biểu đồ cũ nếu tồn tại
     if (monthlyChart) {
         monthlyChart.destroy();
     }
-
-    const monthlyData = {};
-    const currentDate = new Date();
-
-    for (let i = 11; i >= 0; i--) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        monthlyData[monthKey] = { revenue: 0 };
-    }
-
-    if (Array.isArray(invoiceData)) {
-        invoiceData.forEach(inv => {
-            if (inv.ngaylap) {
-                const date = new Date(inv.ngaylap);
-                const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                if (monthlyData[monthKey]) {
-                    const amount = parseInt(inv.dadong?.toString().replace(/[^\d]/g, '')) || 0;
-                    monthlyData[monthKey].revenue += amount;
-                }
-            }
-        });
-    }
-
-    const months = Object.keys(monthlyData);
-    const monthLabels = months.map(month => {
-        const [year, monthNum] = month.split('-');
-        return `${monthNum}/${year}`;
+    
+    const sourceDebt = {}; 
+    
+    // 1. Khởi tạo dữ liệu nợ bằng 0 cho tất cả các nguồn (lớp) hiện có
+    sources.forEach(source => {
+        sourceDebt[source.name] = 0;
     });
 
-    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
-
+    // 2. Tạo bản đồ tra cứu nhanh: customer.id -> customer.source
+    const customerSourceMap = {};
+    customers.forEach(c => {
+        customerSourceMap[c.id] = c.source;
+    });
+    
+    // 3. Tính toán tổng nợ từ dữ liệu hóa đơn (invoiceData)
+    if (Array.isArray(invoiceData)) {
+        invoiceData.forEach(inv => {
+            const mahv = inv.id; 
+            const source = customerSourceMap[mahv] || 'Chưa xác định';
+            
+            // Làm sạch dữ liệu tiền nợ và cộng dồn
+            const debtAmount = parseInt(inv.conno?.toString().replace(/[^\d]/g, '')) || 0;
+            
+            if (sourceDebt[source] === undefined) {
+                sourceDebt[source] = 0;
+            }
+            sourceDebt[source] += debtAmount;
+        });
+    }
+    
+    const sourceNames = Object.keys(sourceDebt);
+    const debtValues = Object.values(sourceDebt);
+    const colors = generateChartColors(sourceNames.length);
+    
+    // 4. Khởi tạo biểu đồ cột với nhãn dọc trong thân cột
     monthlyChart = new Chart(ctx, {
         type: 'bar',
-        plugins: [ChartDataLabels],
+        plugins: [ChartDataLabels], // Kích hoạt plugin hiển thị nhãn
         data: {
-            labels: monthLabels,
-            datasets: [
-                {
-                    label: 'Doanh thu thực thu',
-                    data: months.map(month => monthlyData[month].revenue),
-                    backgroundColor: successColor,
-                    borderColor: successColor,
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    datalabels: {
-                        anchor: 'center',
-                        align: 'center',
-                        // THÊM: Xoay dọc chữ (-90 độ là dọc từ dưới lên)
-                        rotation: -90 
-                    }
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: commonLegendConfig,
+            labels: sourceNames,
+            datasets: [{
+                label: 'Tổng tiền còn nợ (VNĐ)',
+                data: debtValues,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: 1,
+                borderRadius: 4,
+                // Cấu hình hiển thị số liệu bên trong thân cột
                 datalabels: {
-                    color: '#ffffff',
+                    anchor: 'center', // Vị trí neo ở giữa cột
+                    align: 'center',  // Căn giữa
+                    rotation: -90,    // Xoay dọc chữ 90 độ ngược chiều kim đồng hồ
+                    color: '#ffffff', // Chữ màu trắng để nổi bật trên nền màu
                     font: {
                         weight: 'bold',
-                        size: 11 // Có thể tăng size nhẹ vì xoay dọc chiếm ít chiều ngang hơn
+                        size: 11
                     },
                     formatter: function(value) {
-                        if (value === 0) return '';
-                        // Định dạng tiền tệ đầy đủ hoặc rút gọn tùy bạn, ở đây dùng định dạng dễ đọc
+                        if (value === 0) return ''; // Không hiện nếu không có nợ
+                        // Định dạng rút gọn: Triệu (Tr) hoặc Ngàn (K)
                         if (value >= 1000000) return (value / 1000000).toFixed(1) + ' Tr';
                         if (value >= 1000) return (value / 1000).toFixed(0) + ' K';
                         return value;
                     }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
-                        }
-                    }
                 }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            if (value >= 1000000) return (value / 1000000) + 'M';
-                            return new Intl.NumberFormat('vi-VN').format(value);
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Render trend chart
-function renderTrendChart() {
-    const ctx = document.getElementById('trendChart').getContext('2d');
-
-    if (trendChart) {
-        trendChart.destroy();
-    }
-
-    const monthlyRevenue = {};
-    const currentDate = new Date();
-
-    // 1. Khởi tạo dữ liệu cho 12 tháng gần nhất
-    for (let i = 11; i >= 0; i--) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        monthlyRevenue[monthKey] = 0;
-    }
-   
-// SỬA TẠI ĐÂY: Thêm kiểm tra invoiceData
-    if (!invoiceData || !Array.isArray(invoiceData)) {
-        console.warn("invoiceData chưa sẵn sàng hoặc không phải mảng");
-        return; 
-    }
-   
-    // 2. Tích lũy doanh thu từ dữ liệu invoice
-    invoiceData.forEach(inv => {
-        if (inv.ngaylap) {
-            // Chuyển đổi ngaylap thành đối tượng Date
-            const date = new Date(inv.ngaylap);
-            const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            // Nếu tháng này nằm trong khung 12 tháng, cộng dồn số tiền đã đóng
-            if (monthlyRevenue[monthKey] !== undefined) {
-                // Đảm bảo dadong là số (loại bỏ dấu phẩy nếu có và chuyển kiểu)
-                const amount = parseFloat(inv.conno.toString().replace(/[^\d]/g, '')) || 0;
-                monthlyRevenue[monthKey] += amount;
-            }
-        }
-    });
-
-    const months = Object.keys(monthlyRevenue);
-    const monthLabels = months.map(month => {
-        const [year, monthNum] = month.split('-');
-        return `${monthNum}/${year}`;
-    });
-
-    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
-
-    trendChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: monthLabels,
-            datasets: [{
-                label: 'Lợi nhuận từ Tổng thu học phí + bán hàng - phiếu chi - phiếu nhập kho - chi lương',
-                data: Object.values(monthlyRevenue),
-                borderColor: successColor,
-                backgroundColor: hexToRgba(successColor, 0.1),
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                borderWidth: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: commonLegendConfig,
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
+                            return 'Còn nợ: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
                         }
                     }
                 }
@@ -985,16 +895,15 @@ function renderTrendChart() {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'VNĐ'
-                    },
                     ticks: {
                         callback: function(value) {
-                            // Rút gọn hiển thị trục Y (ví dụ 1.000.000 -> 1M)
                             if (value >= 1000000) return (value / 1000000) + 'M';
                             return new Intl.NumberFormat('vi-VN').format(value);
                         }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Số tiền nợ (VNĐ)'
                     }
                 }
             }
@@ -1121,44 +1030,39 @@ function renderSourceRevenueChart() {
         sourceRevenueChart.destroy();
     }
     
-    const sourceRevenue = {};
+    const sourceCustomerCount = {}; // Thống kê số lượng học viên theo nguồn
     
-    // 1. Khởi tạo dữ liệu
+    // 1. Khởi tạo dữ liệu từ danh sách nguồn
     sources.forEach(source => {
-        sourceRevenue[source.name] = 0;
+        sourceCustomerCount[source.name] = 0;
     });
-    sourceRevenue['Chưa xác định'] = 0;
     
-    // 2. Tính doanh thu từ orders array trong khoảng thời gian
+    // 2. Thống kê số lượng khách hàng theo nguồn dựa trên bộ lọc hiện tại
     getFilteredCustomers('created').forEach(customer => {
-        if (customer.orders && customer.orders.length > 0) {
-            customer.orders.forEach(order => {
-                if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
-                    const source = customer.source || 'Chưa xác định';
-                    if (sourceRevenue[source] !== undefined) {
-                        sourceRevenue[source] += order.orderValue || 0;
-                    }
-                }
-            });
+        const source = customer.source || 'Chưa xác định';
+        
+        if (sourceCustomerCount[source] === undefined) {
+            sourceCustomerCount[source] = 0;
         }
+        
+        sourceCustomerCount[source] += 1;
     });
     
-    // 3. Tạo danh sách nhãn kèm số tiền và lọc bỏ các nguồn không có doanh thu để biểu đồ đẹp hơn
-    const formatter = new Intl.NumberFormat('vi-VN');
-    const sourceNames = Object.keys(sourceRevenue).filter(name => sourceRevenue[name] > 0);
-    const revenueValues = sourceNames.map(name => sourceRevenue[name]);
+    // 3. Chuẩn bị dữ liệu và lọc bỏ các nguồn không có học viên để Legend gọn gàng hơn
+    const sourceNames = Object.keys(sourceCustomerCount).filter(name => sourceCustomerCount[name] > 0);
+    const countValues = sourceNames.map(name => sourceCustomerCount[name]);
     
-    // Tạo mảng nhãn hiển thị ở Legend: "Tên nguồn: 1.000.000 đ"
-    const displayLabels = sourceNames.map(name => `${name}: ${formatter.format(sourceRevenue[name])} đ`);
+    // Tạo mảng nhãn hiển thị ở Legend kèm số lượng: "Tên nguồn: X học viên"
+    const displayLabels = sourceNames.map(name => `${name}: ${sourceCustomerCount[name]} học viên`);
     
     const colors = generateChartColors(sourceNames.length);
     
     sourceRevenueChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: displayLabels, // Sử dụng nhãn đã kèm số tiền
+            labels: displayLabels, // Sử dụng nhãn đã kèm số liệu
             datasets: [{
-                data: revenueValues,
+                data: countValues,
                 backgroundColor: colors,
                 borderColor: '#ffffff',
                 borderWidth: 2
@@ -1171,7 +1075,7 @@ function renderSourceRevenueChart() {
                 legend: {
                     display: true,
                     position: 'right', // Đưa chú thích vào góc bên phải
-                    align: 'start',    // Căn nhãn từ trên xuống dưới
+                    align: 'start',    // Căn lề từ phía trên xuống
                     labels: {
                         boxWidth: 12,
                         padding: 15,
@@ -1187,9 +1091,9 @@ function renderSourceRevenueChart() {
                             const value = context.raw;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            // Trong tooltip chỉ hiện tên nguồn và số tiền/phần trăm
+                            // Lấy lại tên nguồn gốc (không kèm số lượng) để hiển thị trong tooltip
                             const sourceName = sourceNames[context.dataIndex];
-                            return `${sourceName}: ${formatter.format(value)} đ (${percentage}%)`;
+                            return `${sourceName}: ${value} học viên (${percentage}%)`;
                         }
                     }
                 }
