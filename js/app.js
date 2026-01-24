@@ -418,6 +418,17 @@ function isToday(dateString) {
            today.getDate() === checkDate.getDate();
 }
 
+function isThisMonth(dateString) {
+    if (!dateString) return false; [cite: 1, 2]
+
+    const today = new Date(); [cite: 2]
+    const checkDate = new Date(dateString); [cite: 2]
+
+    // Kiểm tra trùng năm và trùng tháng
+    return today.getFullYear() === checkDate.getFullYear() && [cite: 2]
+           today.getMonth() === checkDate.getMonth(); [cite: 2]
+}
+
 // Thêm function render reports
 function renderReports() {
     // Khởi tạo date range nếu chưa có
@@ -457,7 +468,7 @@ function renderOverviewCards() {
         }
     });
 
-    const todayCustomers = filteredCustomers.filter(customer => isToday(customer.createdDate)).length;
+    const todayCustomers = filteredCustomers.filter(customer => isThisMonth(customer.createdDate)).length;
 
     // Tìm nhân viên chăm sóc nhiều nhất trong khoảng thời gian
     const staffCareCount = {};
