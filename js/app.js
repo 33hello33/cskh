@@ -558,7 +558,7 @@ function renderStatusChart()
     statusChart = new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: ['Thu (Đã đóng)', 'Chi (Còn nợ)'],
+            labels: ['Thu ', 'Chi'],
             datasets: [{
                 data: [totalThu, totalChi],
                 // Màu xanh cho Thu, màu đỏ cho Chi/Nợ
@@ -957,7 +957,10 @@ function renderTrendChart() {
 function renderSourceChart() 
 {
     const ctx = document.getElementById('sourceChart').getContext('2d');
-    const filteredCustomers = getFilteredCustomers('created');
+    
+    // THAY ĐỔI: Sử dụng toàn bộ danh sách 'customers' thay vì 'filteredCustomers' 
+    // để không bị ảnh hưởng bởi bộ lọc "Tháng này" trên giao diện.
+    const allCustomers = customers; 
 
     if (sourceChart) {
         sourceChart.destroy();
@@ -975,15 +978,18 @@ function renderSourceChart()
         };
     }
 
-    // Tự động tăng biến đếm khi có khách hàng mới trong tháng
-    filteredCustomers.forEach(customer => {
+    // Duyệt qua toàn bộ khách hàng
+    allCustomers.forEach(customer => {
         if (customer.createdDate) {
+            // Đảm bảo parse ngày chính xác từ chuỗi YYYY-MM-DD
             const date = new Date(customer.createdDate);
-            const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            // Nếu tháng của khách hàng nằm trong danh sách 12 tháng, tăng biến đếm
-            if (monthlyData[monthKey]) {
-                monthlyData[monthKey].newCustomers++;
+            if (!isNaN(date.getTime())) {
+                const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                
+                // Nếu tháng của khách hàng nằm trong danh sách 12 tháng, tăng biến đếm
+                if (monthlyData[monthKey]) {
+                    monthlyData[monthKey].newCustomers++;
+                }
             }
         }
     });
@@ -1027,7 +1033,7 @@ function renderSourceChart()
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1 // Đảm bảo hiển thị số nguyên vì đơn vị là con người
+                        stepSize: 1
                     },
                     title: {
                         display: true,
