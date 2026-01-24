@@ -529,34 +529,41 @@ function generateChartColors(itemCount) {
 }
 
 // Render status chart
-function renderStatusChart() {
+function renderStatusChart() 
+{
     const ctx = document.getElementById('statusChart').getContext('2d');
-
+    
+    // Hủy biểu đồ cũ nếu tồn tại
     if (statusChart) {
         statusChart.destroy();
     }
 
-    const filteredCustomers = getFilteredCustomers('created');
-    const statusCount = {};
-    filteredCustomers.forEach(customer => {
-        const status = customer.status || 'Chưa xác định';
-        statusCount[status] = (statusCount[status] || 0) + 1;
-    });
+    let totalThu = 0;
+    let totalChi = 0;
 
-    const statusNames = Object.keys(statusCount);
-    const statusColors = statusNames.map(name => {
-        if (name === 'Chưa xác định') return '#6B7280';
-        return getStatusColor(name);
-    });
+    // 1. Tính toán tổng Thu và Chi từ dữ liệu hóa đơn
+    if (Array.isArray(invoiceData)) {
+        invoiceData.forEach(inv => {
+            // Thu: Số tiền học viên đã đóng (dadong)
+            const thu = parseInt(inv.dadong.toString().replace(/[^\d]/g, '')) || 0;
+            // Chi: Số tiền còn nợ (conno) - Theo yêu cầu gán nhãn là "Chi"
+            const chi = parseInt(inv.conno.toString().replace(/[^\d]/g, '')) || 0;
+            
+            totalThu += thu;
+            totalChi += chi;
+        });
+    }
 
+    // 2. Khởi tạo Pie Chart cho cơ cấu Thu - Chi
     statusChart = new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: statusNames,
+            labels: ['Thu (Đã đóng)', 'Chi (Còn nợ)'],
             datasets: [{
-                data: Object.values(statusCount),
-                backgroundColor: statusColors,
-                borderColor: statusColors,
+                data: [totalThu, totalChi],
+                // Màu xanh cho Thu, màu đỏ cho Chi/Nợ
+                backgroundColor: ['#10B981', '#EF4444'], 
+                borderColor: '#ffffff',
                 borderWidth: 2
             }]
         },
@@ -564,7 +571,17 @@ function renderStatusChart() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: commonLegendConfig
+                legend: commonLegendConfig, // Sử dụng cấu hình legend chung của hệ thống
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${context.label}: ${new Intl.NumberFormat('vi-VN').format(value)} VNĐ (${percentage}%)`;
+                        }
+                    }
+                }
             }
         }
     });
@@ -843,86 +860,92 @@ function renderMonthlyChart()
 // Render trend chart
 function renderTrendChart() {
     const ctx = document.getElementById('trendChart').getContext('2d');
-    const filteredCustomers = getFilteredCustomers('created');
 
     if (trendChart) {
         trendChart.destroy();
     }
 
-    // Group customers by created date
-    const dateCount = {};
-    const closedOrderCount = {}; // UPDATED: Đếm đơn hàng thay vì khách hàng
+    const monthlyRevenue = {};
+    const currentDate = new Date();
 
-    filteredCustomers.forEach(customer => {
-        // Đếm khách hàng mới theo ngày tạo
-        if (customer.createdDate) {
-            const date = customer.createdDate;
-            dateCount[date] = (dateCount[date] || 0) + 1;
-        }
-
-        // UPDATED: Đếm đơn hàng đã chốt theo ngày chốt
-        if (customer.orders && customer.orders.length > 0) {
-            customer.orders.forEach(order => {
-                if (order.closedDate) {
-                    const date = order.closedDate;
-                    closedOrderCount[date] = (closedOrderCount[date] || 0) + 1;
-                }
-            });
+    // 1. Khởi tạo dữ liệu cho 12 tháng gần nhất
+    for (let i = 11; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        monthlyRevenue[monthKey] = 0;
+    }
+   
+// SỬA TẠI ĐÂY: Thêm kiểm tra invoiceData
+    if (!invoiceData || !Array.isArray(invoiceData)) {
+        console.warn("invoiceData chưa sẵn sàng hoặc không phải mảng");
+        return; 
+    }
+   
+    // 2. Tích lũy doanh thu từ dữ liệu invoice
+    invoiceData.forEach(inv => {
+        if (inv.ngaylap) {
+            // Chuyển đổi ngaylap thành đối tượng Date
+            const date = new Date(inv.ngaylap);
+            const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            
+            // Nếu tháng này nằm trong khung 12 tháng, cộng dồn số tiền đã đóng
+            if (monthlyRevenue[monthKey] !== undefined) {
+                // Đảm bảo dadong là số (loại bỏ dấu phẩy nếu có và chuyển kiểu)
+                const amount = parseFloat(inv.conno.toString().replace(/[^\d]/g, '')) || 0;
+                monthlyRevenue[monthKey] += amount;
+            }
         }
     });
 
-    // Lấy tất cả các ngày và sort
-    const allDates = new Set([...Object.keys(dateCount), ...Object.keys(closedOrderCount)]);
-    const sortedDates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b));
-    const last10Dates = sortedDates.slice(-10);
+    const months = Object.keys(monthlyRevenue);
+    const monthLabels = months.map(month => {
+        const [year, monthNum] = month.split('-');
+        return `${monthNum}/${year}`;
+    });
 
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
     const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
 
     trendChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: last10Dates.map(date => formatDate(date)),
-            datasets: [
-                {
-                    label: 'Khách hàng mới',
-                    data: last10Dates.map(date => dateCount[date] || 0),
-                    borderColor: primaryColor,
-                    backgroundColor: hexToRgba(primaryColor, 0.1),
-                    tension: 0.4,
-                    fill: false,
-                    pointBackgroundColor: primaryColor,
-                    pointBorderColor: primaryColor,
-                    pointRadius: 4
-                },
-                {
-                    label: 'Đơn hàng đã chốt',
-                    data: last10Dates.map(date => closedOrderCount[date] || 0),
-                    borderColor: successColor,
-                    backgroundColor: hexToRgba(successColor, 0.1),
-                    tension: 0.4,
-                    fill: false,
-                    pointBackgroundColor: successColor,
-                    pointBorderColor: successColor,
-                    pointRadius: 4
-                }
-            ]
+            labels: monthLabels,
+            datasets: [{
+                label: 'Doanh thu thực thu',
+                data: Object.values(monthlyRevenue),
+                borderColor: successColor,
+                backgroundColor: hexToRgba(successColor, 0.1),
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                borderWidth: 3
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
             plugins: {
-                legend: commonLegendConfig
+                legend: commonLegendConfig,
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
+                        }
+                    }
+                }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'VNĐ'
+                    },
                     ticks: {
-                        stepSize: 1
+                        callback: function(value) {
+                            // Rút gọn hiển thị trục Y (ví dụ 1.000.000 -> 1M)
+                            if (value >= 1000000) return (value / 1000000) + 'M';
+                            return new Intl.NumberFormat('vi-VN').format(value);
+                        }
                     }
                 }
             }
