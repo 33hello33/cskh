@@ -543,28 +543,33 @@ function renderStatusChart() {
     if (statusChart) {
         statusChart.destroy();
     }
-    
-    const filteredCustomers = getFilteredCustomers('created');
-    const statusCount = {};
-    filteredCustomers.forEach(customer => {
-        const status = customer.status || 'Chưa xác định';
-        statusCount[status] = (statusCount[status] || 0) + 1;
-    });
-    
-    const statusNames = Object.keys(statusCount);
-    const statusColors = statusNames.map(name => {
-        if (name === 'Chưa xác định') return '#6B7280';
-        return getStatusColor(name);
-    });
-    
+
+    let totalThu = 0;
+    let totalChi = 0;
+
+    // 1. Tính toán số liệu từ invoiceData [cite: 22, 23]
+    if (Array.isArray(invoiceData)) {
+        invoiceData.forEach(inv => {
+            const thu = parseInt(inv.dadong?.toString().replace(/[^\d]/g, '')) || 0;
+            const chi = parseInt(inv.conno?.toString().replace(/[^\d]/g, '')) || 0;
+            totalThu += thu;
+            totalChi += chi;
+        });
+    }
+
+    // Định dạng tiền tệ để hiển thị trong nhãn
+    const formatter = new Intl.NumberFormat('vi-VN');
+    const labelThu = `Thu: ${formatter.format(totalThu)} đ`;
+    const labelChi = `Chi: ${formatter.format(totalChi)} đ`;
+
     statusChart = new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: statusNames,
+            labels: [labelThu, labelChi],
             datasets: [{
-                data: Object.values(statusCount),
-                backgroundColor: statusColors,
-                borderColor: statusColors,
+                data: [totalThu, totalChi],
+                backgroundColor: ['#E462A8', '#6C63FF'], // Thu xanh, Chi đỏ [cite: 170]
+                borderColor: '#ffffff',
                 borderWidth: 2
             }]
         },
@@ -572,7 +577,29 @@ function renderStatusChart() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: commonLegendConfig
+                legend: {
+                    display: true,
+                    position: 'right', // Đưa chú thích vào góc bên phải
+                    align: 'start',    // Căn lên phía trên cùng của góc
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15,
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `Số tiền: ${formatter.format(value)} đ (${percentage}%)`;
+                        }
+                    }
+                }
             }
         }
     });
@@ -676,19 +703,17 @@ function renderStaffStackedChart() {
 }
 
 
-function renderStaffPerformanceChart() {
+function renderStaffPerformanceChart(){
     const ctx = document.getElementById('staffPerformanceChart').getContext('2d');
     
     if (staffPerformanceChart) {
         staffPerformanceChart.destroy();
     }
     
-    // THAY ĐỔI: Sử dụng filtered customers
     const filteredCustomers = getFilteredCustomers('created');
-    
-    // Tính toán số khách hàng đã chốt theo nhân viên
     const staffSales = {};
     
+    // 1. Khởi tạo dữ liệu
     staff.forEach(s => {
         staffSales[s.name] = {
             totalCustomers: 0,
@@ -697,13 +722,11 @@ function renderStaffPerformanceChart() {
         };
     });
     
-    // THAY ĐỔI: Dùng filtered customers
+    // 2. Tính toán số liệu
     filteredCustomers.forEach(customer => {
         const assignedStaff = customer.assignedStaff;
         if (assignedStaff && staffSales[assignedStaff]) {
             staffSales[assignedStaff].totalCustomers++;
-            
-            // Kiểm tra các trạng thái "đã chốt" - bạn có thể tùy chỉnh
             const closedStatuses = ['Đã chốt', 'Closed', 'Thành công', 'Đã mua'];
             if (customer.status && closedStatuses.includes(customer.status)) {
                 staffSales[assignedStaff].closedCustomers++;
@@ -711,15 +734,17 @@ function renderStaffPerformanceChart() {
         }
     });
     
-    // Phần còn lại giữ nguyên...
-    Object.keys(staffSales).forEach(staffName => {
-        const data = staffSales[staffName];
+    // 3. Tính tỷ lệ chốt và chuẩn bị Label kèm số liệu
+    const staffNames = Object.keys(staffSales);
+    const displayLabels = staffNames.map(name => {
+        const data = staffSales[name];
         if (data.totalCustomers > 0) {
             data.closeRate = ((data.closedCustomers / data.totalCustomers) * 100).toFixed(1);
         }
+        // Gộp số liệu vào nhãn: "Tên NV (Chốt: X - Tỷ lệ: Y%)"
+        return `${name} (Chốt: ${data.closedCustomers} - ${data.closeRate}%)`;
     });
     
-    const staffNames = Object.keys(staffSales);
     const closedData = staffNames.map(name => staffSales[name].closedCustomers);
     const closeRateData = staffNames.map(name => staffSales[name].closeRate);
     
@@ -729,7 +754,7 @@ function renderStaffPerformanceChart() {
     staffPerformanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: staffNames,
+            labels: staffNames, // Trục X vẫn giữ tên nhân viên gốc
             datasets: [
                 {
                     type: 'line',
@@ -740,9 +765,6 @@ function renderStaffPerformanceChart() {
                     borderWidth: 3,
                     fill: false,
                     tension: 0.4,
-                    pointBackgroundColor: successColor,
-                    pointBorderColor: successColor,
-                    pointRadius: 5,
                     yAxisID: 'y'
                 },
                 {
@@ -759,45 +781,47 @@ function renderStaffPerformanceChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
             plugins: {
-                legend: commonLegendConfig
+                legend: {
+                    display: true,
+                    position: 'right', // Đưa chú thích vào góc bên phải
+                    align: 'start',    // Căn lề từ phía trên
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15,
+                        font: { size: 11 },
+                        // Hàm render lại nhãn Legend để hiển thị thông tin chi tiết kèm số liệu
+                        generateLabels: (chart) => {
+                            return staffNames.map((name, i) => ({
+                                text: displayLabels[i],
+                                fillStyle: i % 2 === 0 ? successColor : primaryColor, // Minh họa màu theo dataset
+                                strokeStyle: i % 2 === 0 ? successColor : primaryColor,
+                                lineWidth: 1,
+                                hidden: false,
+                                index: i
+                            }));
+                        }
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
             },
             scales: {
                 y: {
                     type: 'linear',
-                    display: true,
                     position: 'left',
                     beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Tỷ lệ chốt (%)',
-                        font: {
-                            size: 11
-                        }
-                    }
+                    title: { display: true, text: 'Tỷ lệ chốt (%)' }
                 },
                 y1: {
                     type: 'linear',
-                    display: true,
                     position: 'right',
                     beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Số KH đã chốt',
-                        font: {
-                            size: 11
-                        }
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    },
-                    ticks: {
-                        stepSize: 1
-                    }
+                    title: { display: true, text: 'Số KH đã chốt' },
+                    grid: { drawOnChartArea: false },
+                    ticks: { stepSize: 1 }
                 }
             }
         }
@@ -807,119 +831,104 @@ function renderStaffPerformanceChart() {
 // Biểu đồ chăm sóc theo tháng
 function renderMonthlyChart() {
     const ctx = document.getElementById('monthlyChart').getContext('2d');
-    const filteredCustomers = getFilteredCustomers('created');
     
     if (monthlyChart) {
         monthlyChart.destroy();
     }
-    
-    // Tạo dữ liệu theo tháng
+
     const monthlyData = {};
     const currentDate = new Date();
-    
-    // Tạo 12 tháng gần nhất
+
+    // 1. Khởi tạo 12 tháng gần nhất
     for (let i = 11; i >= 0; i--) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
         monthlyData[monthKey] = {
             newCustomers: 0,
-            closedOrders: 0 // UPDATED: Đếm số đơn hàng thay vì số khách hàng
+            revenue: 0 // Thêm trường lưu tổng doanh thu
         };
     }
-    
-    // Đếm khách hàng mới theo tháng
-    filteredCustomers.forEach(customer => {
-        if (customer.createdDate) {
-            const date = new Date(customer.createdDate);
-            const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            if (monthlyData[monthKey]) {
-                monthlyData[monthKey].newCustomers++;
-            }
-        }
-        
-        // UPDATED: Đếm đơn hàng đã chốt theo tháng
-        if (customer.orders && customer.orders.length > 0) {
-            customer.orders.forEach(order => {
-                if (order.closedDate) {
-                    const date = new Date(order.closedDate);
-                    const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                    if (monthlyData[monthKey]) {
-                        monthlyData[monthKey].closedOrders++;
-                    }
+
+    // 2. Tích lũy doanh thu từ invoiceData (Bỏ qua filter giao diện để lấy đủ 12 tháng)
+    if (Array.isArray(invoiceData)) {
+        invoiceData.forEach(inv => {
+            if (inv.ngaylap) {
+                const date = new Date(inv.ngaylap);
+                const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                
+                if (monthlyData[monthKey]) {
+                    const amount = parseInt(inv.dadong?.toString().replace(/[^\d]/g, '')) || 0;
+                    monthlyData[monthKey].revenue += amount;
                 }
-            });
-        }
-    });
-    
+            }
+        });
+    }
+
     const months = Object.keys(monthlyData);
     const monthLabels = months.map(month => {
         const [year, monthNum] = month.split('-');
         return `${monthNum}/${year}`;
     });
-    
+
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
     const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
-    
+
     monthlyChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar', // Chuyển sang Bar để có thân cột
+        plugins: [ChartDataLabels], // Kích hoạt plugin hiển thị số liệu trên cột
         data: {
             labels: monthLabels,
             datasets: [
                 {
-                    label: 'Khách hàng mới',
-                    data: months.map(month => monthlyData[month].newCustomers),
-                    borderColor: primaryColor,
-                    backgroundColor: hexToRgba(primaryColor, 0.1),
-                    tension: 0.4,
-                    fill: true,
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'Đơn hàng đã chốt',
-                    data: months.map(month => monthlyData[month].closedOrders),
+                    label: 'Doanh thu thực thu',
+                    data: months.map(month => monthlyData[month].revenue),
+                    backgroundColor: successColor,
                     borderColor: successColor,
-                    backgroundColor: hexToRgba(successColor, 0.1),
-                    tension: 0.4,
-                    fill: true,
-                    yAxisID: 'y1'
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    datalabels: {
+                        anchor: 'center', // Nằm giữa thân cột
+                        align: 'center'   // Căn giữa
+                    }
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
             plugins: {
-                legend: commonLegendConfig
+                legend: commonLegendConfig,
+                datalabels: {
+                    color: '#ffffff', // Chữ màu trắng để nổi bật trên thân cột
+                    font: {
+                        weight: 'bold',
+                        size: 10
+                    },
+                    formatter: function(value) {
+                        if (value === 0) return ''; // Không hiện nếu bằng 0
+                        // Định dạng rút gọn: 1.2M hoặc 500K
+                        if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                        if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+                        return value;
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
+                        }
+                    }
+                }
             },
             scales: {
                 y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
                     beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Khách hàng mới',
-                        font: { size: 11 }
-                    },
-                    ticks: { stepSize: 1 }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Đơn hàng đã chốt',
-                        font: { size: 11 }
-                    },
-                    grid: { drawOnChartArea: false },
-                    ticks: { stepSize: 1 }
+                    ticks: {
+                        callback: function(value) {
+                            if (value >= 1000000) return (value / 1000000) + 'M';
+                            return new Intl.NumberFormat('vi-VN').format(value);
+                        }
+                    }
                 }
             }
         }
@@ -1100,7 +1109,7 @@ function renderSourceChart() {
 }
 
 // BIỂU ĐỒ MỚI 2: Doanh thu theo nguồn khách
-function renderSourceRevenueChart() {
+function renderSourceRevenueChart(){
     const ctx = document.getElementById('sourceRevenueChart').getContext('2d');
     
     if (sourceRevenueChart) {
@@ -1109,13 +1118,13 @@ function renderSourceRevenueChart() {
     
     const sourceRevenue = {};
     
-    // Khởi tạo dữ liệu
+    // 1. Khởi tạo dữ liệu
     sources.forEach(source => {
         sourceRevenue[source.name] = 0;
     });
     sourceRevenue['Chưa xác định'] = 0;
     
-    // UPDATED: Tính doanh thu từ orders array trong khoảng thời gian
+    // 2. Tính doanh thu từ orders array trong khoảng thời gian
     getFilteredCustomers('created').forEach(customer => {
         if (customer.orders && customer.orders.length > 0) {
             customer.orders.forEach(order => {
@@ -1129,17 +1138,24 @@ function renderSourceRevenueChart() {
         }
     });
     
-    const sourceNames = Object.keys(sourceRevenue);
+    // 3. Tạo danh sách nhãn kèm số tiền và lọc bỏ các nguồn không có doanh thu để biểu đồ đẹp hơn
+    const formatter = new Intl.NumberFormat('vi-VN');
+    const sourceNames = Object.keys(sourceRevenue).filter(name => sourceRevenue[name] > 0);
+    const revenueValues = sourceNames.map(name => sourceRevenue[name]);
+    
+    // Tạo mảng nhãn hiển thị ở Legend: "Tên nguồn: 1.000.000 đ"
+    const displayLabels = sourceNames.map(name => `${name}: ${formatter.format(sourceRevenue[name])} đ`);
+    
     const colors = generateChartColors(sourceNames.length);
     
     sourceRevenueChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: sourceNames,
+            labels: displayLabels, // Sử dụng nhãn đã kèm số tiền
             datasets: [{
-                data: Object.values(sourceRevenue),
+                data: revenueValues,
                 backgroundColor: colors,
-                borderColor: colors,
+                borderColor: '#ffffff',
                 borderWidth: 2
             }]
         },
@@ -1147,12 +1163,28 @@ function renderSourceRevenueChart() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: commonLegendConfig,
+                legend: {
+                    display: true,
+                    position: 'right', // Đưa chú thích vào góc bên phải
+                    align: 'start',    // Căn nhãn từ trên xuống dưới
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15,
+                        font: {
+                            size: 11,
+                            weight: 'bold'
+                        }
+                    }
+                },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             const value = context.raw;
-                            return context.label + ': ' + new Intl.NumberFormat('vi-VN').format(value);
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            // Trong tooltip chỉ hiện tên nguồn và số tiền/phần trăm
+                            const sourceName = sourceNames[context.dataIndex];
+                            return `${sourceName}: ${formatter.format(value)} đ (${percentage}%)`;
                         }
                     }
                 }
