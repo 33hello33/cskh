@@ -667,7 +667,85 @@ function renderStaffStackedChart() {
 }
 
 
-function renderStaffPerformanceChart() {}
+function renderStaffPerformanceChart()
+{
+    const ctx = document.getElementById('staffPerformanceChart').getContext('2d');
+    
+    // Hủy biểu đồ cũ nếu tồn tại để vẽ biểu đồ mới
+    if (staffPerformanceChart) {
+        staffPerformanceChart.destroy();
+    }
+    
+    const sourceRevenue = {}; 
+    
+    // 1. Khởi tạo doanh thu bằng 0 cho tất cả các lớp (sources) hiện có
+    sources.forEach(source => {
+        sourceRevenue[source.name] = 0;
+    });
+
+    // 2. Tạo bản đồ tra cứu nhanh: customer.id -> customer.source (Lớp)
+    const customerSourceMap = {};
+    customers.forEach(c => {
+        customerSourceMap[c.id] = c.source || 'Chưa xác định';
+    });
+    
+    // 3. Tính toán tổng doanh thu thực thu từ dữ liệu hóa đơn (invoiceData)
+    if (Array.isArray(invoiceData)) {
+        invoiceData.forEach(inv => {
+            // Xác định lớp của học viên dựa trên mã học viên (inv.id)
+            const mahv = inv.id; 
+            const source = customerSourceMap[mahv] || 'Chưa xác định';
+            
+            // Làm sạch và chuyển đổi số tiền đã đóng (dadong)
+            // Loại bỏ tất cả ký tự không phải số để tránh lỗi định dạng tiền tệ
+            const amountReceived = parseInt(inv.dadong.toString().replace(/[^\d]/g, '')) || 0;
+            
+            // Nếu lớp này chưa có trong danh sách thống kê, khởi tạo nó
+            if (sourceRevenue[source] === undefined) {
+                sourceRevenue[source] = 0;
+            }
+            
+            // Cộng dồn vào tổng doanh thu của lớp tương ứng
+            sourceRevenue[source] += amountReceived;
+        });
+    }
+    
+    // 4. Chuẩn bị dữ liệu cho biểu đồ (Lọc bỏ các lớp có doanh thu bằng 0 để biểu đồ tròn đẹp hơn)
+    const sourceNames = Object.keys(sourceRevenue).filter(name => sourceRevenue[name] > 0);
+    const revenueValues = sourceNames.map(name => sourceRevenue[name]);
+    const colors = generateChartColors(sourceNames.length);
+    
+    // 5. Khởi tạo Pie Chart
+    staffPerformanceChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: sourceNames,
+            datasets: [{
+                data: revenueValues,
+                backgroundColor: colors,
+                borderColor: '#ffffff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: commonLegendConfig, // Sử dụng cấu hình legend chung của hệ thống
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${new Intl.NumberFormat('vi-VN').format(value)} VNĐ (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 
 // Biểu đồ chăm sóc theo tháng
 function renderMonthlyChart() 
