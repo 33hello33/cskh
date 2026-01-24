@@ -458,11 +458,11 @@ function renderOverviewCards() {
     let closedCount = 0;
 
     filteredCustomers.forEach(customer => {
-        closedCount++;
         if (customer.orders && customer.orders.length > 0) {
             customer.orders.forEach(order => {
                 if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
-                    totalRevenue += order.orderValue || 0
+                    totalRevenue += order.orderValue || 0;
+                    closedCount++;
                 }
             });
         }
