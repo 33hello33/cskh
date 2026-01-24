@@ -1237,8 +1237,8 @@ function renderTopCustomersByRevenue() {
             if (inv.ngaylap && isDateInRange(inv.ngaylap, 'closed')) {
                 const customerId = inv.id; // mahv
                 
-                // Làm sạch dữ liệu số tiền dadong (xóa dấu chấm, đơn vị đ...)
-                const amount = parseInt(inv.dadong.toString().replace(/[^\d]/g, '')) || 0;
+                // Làm sạch dữ liệu số tiền conno (xóa dấu chấm, đơn vị đ...)
+                const amount = parseInt(inv.conno.toString().replace(/[^\d]/g, '')) || 0;
 
                 if (amount > 0) {
                     revenueByCustomer[customerId] = (revenueByCustomer[customerId] || 0) + amount;
