@@ -149,6 +149,51 @@ async function initApp() {
         showLoginModal();
     }
 }
+// Chuyển đổi mode trong Login Modal
+function toggleLoginMode(mode) {
+    const loginForm = document.getElementById('login-form');
+    const traCuuForm = document.getElementById('tra-cuu-form');
+    const btnStaff = document.getElementById('mode-staff');
+    const btnParent = document.getElementById('mode-parent');
+
+    if (mode === 'parent') {
+        loginForm.style.display = 'none';
+        traCuuForm.style.display = 'block';
+        btnParent.classList.add('active');
+        btnStaff.classList.remove('active');
+    } else {
+        loginForm.style.display = 'block';
+        traCuuForm.style.display = 'none';
+        btnStaff.classList.add('active');
+        btnParent.classList.remove('active');
+    }
+}
+
+// Xử lý khi nhấn nút Tra cứu
+function performTraCuu() {
+    const studentId = document.getElementById('student-id-search').value;
+    if (!studentId) return alert("Vui lòng nhập mã học viên");
+
+    // 1. Ẩn modal login và toàn bộ container chính
+    document.getElementById('login-modal').style.display = 'none';
+    document.querySelector('.container').style.display = 'none';
+    
+    // 2. Hiện Dashboard phụ huynh
+    document.getElementById('parent-dashboard').style.display = 'block';
+    
+    // 3. Gọi hàm fetch dữ liệu (Bạn sẽ viết hàm này để lấy từ Google Sheet)
+    console.log("Đang tra cứu cho mã:", studentId);
+    // loadDataParent(studentId); 
+}
+
+// Chuyển tab trong Dashboard phụ huynh
+function switchParentTab(tabId) {
+    document.querySelectorAll('.parent-tab-content').forEach(t => t.style.display = 'none');
+    document.querySelectorAll('[data-parent-tab]').forEach(t => t.classList.remove('active'));
+    
+    document.getElementById(tabId).style.display = 'block';
+    document.querySelector(`[data-parent-tab="${tabId}"]`).classList.add('active');
+}
 
 // Function đăng nhập
 async function performLogin() {
