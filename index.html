@@ -479,13 +479,16 @@
     <!-- Login Modal -->
     <div id="login-modal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-header">
-                <h2 class="modal-title">
-                    <i class="fas fa-lock"></i> Dành Cho Nhân Viên
-                </h2>
-            </div>
-            
+            <div class="d-flex mb-3" style="border-bottom: 1px solid #ddd;">
+            <button onclick="toggleLoginMode('staff')" class="btn-mode active" id="mode-staff">Nhân viên</button>
+            <button onclick="toggleLoginMode('parent')" class="btn-mode" id="mode-parent">Phụ huynh tra cứu</button>
+        </div>
             <form id="login-form">
+                <div class="modal-header">
+                    <h2 class="modal-title">
+                        <i class="fas fa-lock"></i> Dành Cho Nhân Viên
+                    </h2>
+                </div>
                 <div class="form-group">
                     <label for="username">TÊN ĐĂNG NHẬP <span class="required-star">*</span></label>
                     <input type="text" 
@@ -515,27 +518,30 @@
                 </div>
             </form>
    
-<br> 
-        <div class="modal-header">
+        <br> 
+
+         <form id="tra-cuu-form" style="display: none;">
+             <div class="modal-header">
                 <h2 class="modal-title">
                     <i class="fas fa-lock"></i> Dành Cho Phụ Huynh
                 </h2>
-         </div>
-         <div class="form-group">
-                    <label for="username">MÃ HỌC VIÊN <span class="required-star">*</span></label>
-                    <input type="text" 
-                          id="mahv" 
-                          name="mahv" 
-                          class="form-control" 
-                          placeholder="Nhập mã học viên" 
-                          required >
-                <div class="d-flex gap-3 justify-content-center mt-4">
-                    <button type="button" class="btn btn-success" onclick="performTraCuu">
-                        <i class="fas fa-sign-in-alt"></i> Tra cứu
-                    </button>
-                </div>
-        </div>
-                 </div>
+             </div>
+             <div class="form-group">
+                        <label for="username">MÃ HỌC VIÊN <span class="required-star">*</span></label>
+                        <input type="text" 
+                              id="student-id-search" 
+                              name="mahv" 
+                              class="form-control" 
+                              placeholder="Ví dụ: HV001" 
+                              required >
+                    <div class="d-flex gap-3 justify-content-center mt-4">
+                        <button type="button" class="btn btn-success" onclick="performTraCuu()">
+                            <i class="fas fa-sign-in-alt"></i> Tra cứu
+                        </button>
+                    </div>
+            </div>
+        </form>
+      </div>
  </div>
     
     <!-- Customer Modal -->
@@ -1228,5 +1234,76 @@
             </form>
         </div>
     </div>
+    <div id="parent-dashboard" class="content-section" style="display: none; padding: 20px;">
+    <div class="header d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-user-graduate"></i> Kết quả tra cứu: <span id="display-student-name">...</span></h2>
+        <button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-arrow-left"></i> Quay lại</button>
+    </div>
+
+    <div class="nav-tabs mb-4">
+        <div class="nav-tab active" data-parent-tab="fee-tab" onclick="switchParentTab('fee-tab')">
+            <i class="fas fa-money-check-alt"></i> Học phí
+        </div>
+        <div class="nav-tab" data-parent-tab="attendance-tab" onclick="switchParentTab('attendance-tab')">
+            <i class="fas fa-calendar-check"></i> Điểm danh
+        </div>
+    </div>
+
+    <div id="fee-tab" class="parent-tab-content active">
+        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 20px;">
+            <div class="glass-card" style="background: rgba(59, 130, 246, 0.1);">
+                <h3><i class="fas fa-bell"></i> Thông báo học phí gần nhất</h3>
+                <div id="latest-fee-info" style="font-size: 1.1em; line-height: 1.8;">
+                    <p>Trạng thái: <span class="badge" id="fee-status">Đang tải...</span></p>
+                    <p>Số tiền cần đóng: <strong id="fee-amount">0đ</strong></p>
+                    <p>Hạn đóng: <span id="fee-deadline">--/--/----</span></p>
+                    <p>Nội dung: <span id="fee-note">...</span></p>
+                </div>
+            </div>
+            <div class="glass-card text-center">
+                <h3>QR Chuyển khoản</h3>
+                <img id="qr-payment" src="https://api.vietqr.io/image/vietinbank-demo.png" alt="QR Code" style="width: 100%; max-width: 200px; border-radius: 8px;">
+                <p style="font-size: 12px; margin-top: 10px; color: #666;">Quét mã để thanh toán nhanh</p>
+            </div>
+        </div>
+
+        <h3 class="mt-4"><i class="fas fa-history"></i> Lịch sử 10 lần đóng gần nhất</h3>
+        <div class="table-container mt-2">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ngày đóng</th>
+                        <th>Mã hóa đơn</th>
+                        <th>Số tiền</th>
+                        <th>Hình thức</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody id="history-fee-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="attendance-tab" class="parent-tab-content" style="display: none;">
+        <div class="glass-card">
+            <h3><i class="fas fa-calendar-alt"></i> Bảng điểm danh (30 ngày gần nhất)</h3>
+            <div class="table-container mt-3">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ngày học</th>
+                            <th>Giờ vào</th>
+                            <th>Trạng thái</th>
+                            <th>Nhận xét của giáo viên</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
