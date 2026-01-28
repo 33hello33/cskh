@@ -3,7 +3,7 @@
 // Khai báo thông tin dự án Supabase
 const SUPABASE_URL = 'https://lyalwoectghdpjkbqlkx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5YWx3b2VjdGdoZHBqa2JxbGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMjk4MDIsImV4cCI6MjA3OTcwNTgwMn0.B5O419Tk0GQoiO_OxdvZ22USiHMUEmsXvjrECJpTaJk';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function callGAS(functionName, ...args) {
     try {
@@ -188,7 +188,7 @@ function toggleLoginMode(mode) {
 async function loadLatestFeeNotification(studentId) {
     try {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('tbl_thongbao')
             .select('hocphi, trangthai, ngaylap, ghichu')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
@@ -237,7 +237,7 @@ async function performTraCuu() {
     }
    
    // Lấy dữ liệu từ Supabase
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('tbl_hv') // Tên bảng trên Supabase
         .select('*')       // Lấy tất cả các cột
         .eq('mahv', studentId) // Điều kiện: mã học sinh bằng studentId
