@@ -1191,10 +1191,10 @@ async function renderThongkenolopChart() {
         // 2. Truy vấn Supabase: Lấy tên lớp và tiền nợ của học viên
         // Chỉ lấy những học viên có nợ (conno > 0)
         const { data, error } = await supabaseClient
-            .from('tbl_hv')
+            .from('tbl_hd')
             .select(`
                 conno,
-                tbl_lop (tenlop)
+                tenlop
             `)
             .gt('conno', 0); // Lọc nợ lớn hơn 0
 
