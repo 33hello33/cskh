@@ -399,8 +399,8 @@ async function performLogin() {
        const { data: user, error } = await supabaseClient
             .from('tbl_nv')
             .select('manv, tennv, username, role, password')
-            .eq('username', usernameInput)
-            .eq('password', passwordInput) // Lưu ý: Nên mã hóa password nếu làm hệ thống lớn
+            .eq('username', username)
+            .eq('password', password) // Lưu ý: Nên mã hóa password nếu làm hệ thống lớn
             .single(); // Lấy 1 bản ghi duy nhất
 
         if (error || !user) {
