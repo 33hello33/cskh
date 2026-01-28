@@ -682,7 +682,7 @@ function renderReports() {
 //    renderTangtruongdoanhthuChart();
 //    renderTangtruongloinhuanChart();
 //    renderTopCustomersByRevenue();
-//    renderCocaudoanhthulopChart();
+    renderCocaudoanhthulopChart();
 //    renderThongkenolopChart();
     renderTangtruonghocvienChart();
     renderSisotunglopChart();
@@ -1042,101 +1042,98 @@ function renderTangtruongdoanhthuChart() {
 }
 
 
-function renderCocaudoanhthulopChart()
-{
+async function renderCocaudoanhthulopChart() {
     const ctx = document.getElementById('cocaudoanhthulopChart').getContext('2d');
     
-    // Hủy biểu đồ cũ nếu tồn tại để vẽ biểu đồ mới
-    if (cocaudoanhthulopChart) {
-        cocaudoanhthulopChart.destroy();
+    // 1. Hủy biểu đồ cũ nếu đã tồn tại
+    if (window.cocaudoanhthulopChart instanceof Chart) {
+        window.cocaudoanhthulopChart.destroy();
     }
-    
-    const sourceRevenue = {}; 
-    
-    // 1. Khởi tạo doanh thu bằng 0 cho tất cả các lớp (sources) hiện có
-    sources.forEach(source => {
-        sourceRevenue[source.name] = 0;
-    });
 
-    // 2. Tạo bản đồ tra cứu nhanh: customer.id -> customer.source (Lớp)
-    const customerSourceMap = {};
-    customers.forEach(c => {
-        customerSourceMap[c.id] = c.source || 'Chưa xác định';
-    });
-    
-    // 3. Tính toán tổng doanh thu thực thu từ dữ liệu hóa đơn (invoiceData)
-    if (Array.isArray(invoiceData)) {
+    try {
+        // 2. Lấy dữ liệu từ Supabase (Lấy cột tenlop và dadong từ bảng tbl_hd)
+        const { data: invoiceData, error } = await supabaseClient
+            .from('tbl_hd')
+            .select('tenlop, dadong');
+
+        if (error) throw error;
+
+        const sourceRevenue = {};
+
+        // 3. Xử lý và cộng dồn doanh thu
         invoiceData.forEach(inv => {
-            // Xác định lớp của học viên dựa trên mã học viên (inv.id)
-            const mahv = inv.id; 
-            const source = customerSourceMap[mahv] || 'Chưa xác định';
+            const label = inv.tenlop || 'Chưa xác định';
             
-            // Làm sạch và chuyển đổi số tiền đã đóng (dadong)
-            const amountReceived = parseInt(inv.dadong.toString().replace(/[^\d]/g, '')) || 0;
-            
-            if (sourceRevenue[source] === undefined) {
-                sourceRevenue[source] = 0;
+            // Xử lý chuỗi "1,000,000" thành số: loại bỏ dấu phẩy và chuyển sang số nguyên
+            const rawAmount = inv.dadong ? inv.dadong.toString().replace(/,/g, '') : "0";
+            const amountReceived = parseInt(rawAmount) || 0;
+
+            if (amountReceived > 0) {
+                sourceRevenue[label] = (sourceRevenue[label] || 0) + amountReceived;
             }
-            
-            // Cộng dồn vào tổng doanh thu của lớp tương ứng
-            sourceRevenue[source] += amountReceived;
         });
-    }
-    
-    // 4. Chuẩn bị dữ liệu và định dạng nhãn kèm số tiền
-    const formatter = new Intl.NumberFormat('vi-VN');
-    const sourceNames = Object.keys(sourceRevenue).filter(name => sourceRevenue[name] > 0);
-    const revenueValues = sourceNames.map(name => sourceRevenue[name]);
-    
-    // Tạo mảng nhãn hiển thị ở Legend kèm số tiền: "Tên lớp: 1.000.000 đ"
-    const displayLabels = sourceNames.map(name => `${name}: ${formatter.format(sourceRevenue[name])} đ`);
-    
-    const colors = generateChartColors(sourceNames.length);
-    
-    // 5. Khởi tạo Pie Chart
-    cocaudoanhthulopChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: displayLabels, // Sử dụng nhãn đã kèm số tiền
-            datasets: [{
-                data: revenueValues,
-                backgroundColor: colors,
-                borderColor: '#ffffff',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'right', // Đưa chú thích vào góc bên phải
-                    align: 'start',    // Căn nhãn từ trên xuống dưới
-                    labels: {
-                        boxWidth: 12,
-                        padding: 15,
-                        font: {
-                            size: 11,
-                            weight: 'bold'
+
+        // 4. Chuẩn bị dữ liệu cho biểu đồ
+        const formatter = new Intl.NumberFormat('vi-VN');
+        const sourceNames = Object.keys(sourceRevenue);
+        const revenueValues = sourceNames.map(name => sourceRevenue[name]);
+        
+        // Nhãn hiển thị bên phải: "Tên lớp: 1.000.000 đ"
+        const displayLabels = sourceNames.map(name => 
+            `${name}: ${formatter.format(sourceRevenue[name])} đ`
+        );
+
+        if (revenueValues.length === 0) {
+            console.warn("Không có dữ liệu doanh thu để hiển thị.");
+            return;
+        }
+
+        const colors = generateChartColors(sourceNames.length);
+
+        // 5. Khởi tạo Pie Chart
+        window.cocaudoanhthulopChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: displayLabels,
+                datasets: [{
+                    data: revenueValues,
+                    backgroundColor: colors,
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'right',
+                        align: 'start',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            font: { size: 11, weight: 'bold' }
                         }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const value = context.raw;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            // Lấy lại tên lớp gốc (không kèm tiền) để hiển thị trong tooltip cho gọn
-                            const sourceName = sourceNames[context.dataIndex];
-                            return `${sourceName}: ${formatter.format(value)} VNĐ (${percentage}%)`;
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                const sourceName = sourceNames[context.dataIndex];
+                                return `${sourceName}: ${formatter.format(value)} VNĐ (${percentage}%)`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+
+    } catch (err) {
+        console.error("Lỗi khi tải biểu đồ cơ cấu doanh thu:", err.message);
+    }
 }
 
 // Biểu đồ chăm sóc theo tháng
