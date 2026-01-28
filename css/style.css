@@ -1477,3 +1477,48 @@ body:not(.manager-user) .nav-tab[data-tab="settings"] {
     text-transform: none;
     margin-bottom: 4px;
 }
+.login-toggle-container {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: 4px;
+    position: relative;
+    margin-bottom: 25px;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-toggle {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #64748b;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.btn-toggle.active {
+    color: #fff;
+}
+
+/* Hiệu ứng mảng màu trượt bên dưới */
+.login-toggle-bg {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: #3b82f6; /* Màu xanh chủ đạo */
+    border-radius: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+/* Di chuyển mảng màu khi chọn Phụ huynh */
+.is-parent .login-toggle-bg {
+    left: 50%;
+}
