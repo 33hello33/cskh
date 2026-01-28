@@ -1190,7 +1190,7 @@ async function renderThongkenolopChart() {
     try {
         // 2. Truy vấn Supabase: Lấy tên lớp và tiền nợ của học viên
         // Chỉ lấy những học viên có nợ (conno > 0)
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('tbl_hv')
             .select(`
                 conno,
