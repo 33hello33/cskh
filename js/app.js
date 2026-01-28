@@ -185,6 +185,47 @@ function toggleLoginMode(mode) {
     }
 }
 
+async function loadLatestFeeNotification(studentId) {
+    try {
+        // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
+        const { data, error } = await supabase
+            .from('tbl_thongbao')
+            .select('hocphi, trangthai, ngaylap, ghichu')
+            .eq('mahv', studentId) // Giả định cột liên kết là student_id
+            .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
+            .limit(1)
+            .single();
+
+        if (error) {
+            console.error("Lỗi lấy thông báo:", error.message);
+            document.getElementById('fee-status').innerText = "Không có dữ liệu";
+            return;
+        }
+
+        if (data) {
+            // 1. Xử lý số tiền học phí (định dạng VND)
+            document.getElementById('fee-amount').innerText = data.hocphi;
+
+            // 2. Xử lý Trạng thái
+            const statusEl = document.getElementById('fee-status');
+            statusEl.innerText = data.trangthai;
+            // Thêm màu sắc cho badge dựa trên trạng thái
+            statusEl.className = 'badge ' + (data.trangthai === 'Đã đóng' ? 'bg-success' : 'bg-danger');
+
+            // 3. Tính Hạn đóng = ngaylap + 10 ngày
+            const ngayLap = new Date(data.ngaylap);
+            ngayLap.setDate(ngayLap.getDate() + 10);
+            const hanDong = ngayLap.toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
+            document.getElementById('fee-deadline').innerText = hanDong;
+
+            // 4. Ghi chú
+            document.getElementById('fee-note').innerText = data.ghichu || "Không có ghi chú";
+        }
+    } catch (err) {
+        console.error("Lỗi hệ thống:", err);
+    }
+}
+
 // Xử lý khi nhấn nút Tra cứu
 function performTraCuu() {
     // 1. Lấy giá trị mã học sinh
@@ -223,6 +264,9 @@ function performTraCuu() {
         parentDashboard.style.display = 'block';
         // Hiển thị tên học sinh (giả định)
         document.getElementById('display-student-name').innerText = studentId;
+
+        // Gọi hàm load dữ liệu học phí
+        await loadLatestFeeNotification(studentId);
     }
 
     console.log("Đã thực hiện tra cứu cho mã:", studentId);
