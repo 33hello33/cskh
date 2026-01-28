@@ -678,12 +678,12 @@ function renderReports() {
     }
 
 //    renderOverviewCards();
-//    renderCocauthuchiChartChart();
+    renderCocauthuchiChart();
     renderTangtruongdoanhthuChart();
     renderTangtruongloinhuanChart();
 //    renderTopCustomersByRevenue();
     renderCocaudoanhthulopChart();
-//    renderThongkenolopChart();
+    renderThongkenolopChart();
     renderTangtruonghocvienChart();
     renderSisotunglopChart();
 //    renderStaffRevenueChart();
@@ -780,75 +780,83 @@ function generateChartColors(itemCount) {
     return colors.slice(0, itemCount);
 }
 
-// Render status chart
-function renderCocauthuchiChart() 
-{
+// Biểu đồ cơ cấu thu chi
+async function renderCocauthuchiChart() {
     const ctx = document.getElementById('cocauthuchiChart').getContext('2d');
     
-    if (cocauthuchiChart) {
-        cocauthuchiChart.destroy();
+    // 1. Hủy biểu đồ cũ nếu đã tồn tại
+    if (window.cocauthuchiChart instanceof Chart) {
+        window.cocauthuchiChart.destroy();
     }
 
-    let totalThu = 0;
-    let totalChi = 0;
+    try {
+        // 2. Gọi Supabase lấy dữ liệu từ 4 bảng
+        // Chúng ta lấy toàn bộ để tính tổng tích lũy (hoặc thêm .gte để lọc theo thời gian nếu cần)
+        const [resHd, resBill, resChi, resNhap] = await Promise.all([
+            supabase.from('tbl_hd').select('dadong'),
+            supabase.from('tbl_billhanghoa').select('dadong'),
+            supabase.from('tbl_phieuchi').select('chiphi'),
+            supabase.from('tbl_nhapkho').select('thanhtien')
+        ]);
 
-    // 1. Tính toán số liệu từ invoiceData [cite: 22, 23]
-    if (Array.isArray(invoiceData)) {
-        invoiceData.forEach(inv => {
-            const thu = parseInt(inv.dadong?.toString().replace(/[^\d]/g, '')) || 0;
-            const chi = parseInt(inv.conno?.toString().replace(/[^\d]/g, '')) || 0;
-            totalThu += thu;
-            totalChi += chi;
-        });
-    }
-
-    // Định dạng tiền tệ để hiển thị trong nhãn
-    const formatter = new Intl.NumberFormat('vi-VN');
-    const labelThu = `Thu: ${formatter.format(totalThu)} đ`;
-    const labelChi = `Chi: ${formatter.format(totalChi)} đ`;
-
-    cocauthuchiChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: [labelThu, labelChi],
-            datasets: [{
-                data: [totalThu, totalChi],
-                backgroundColor: ['#E462A8', '#6C63FF'], // Thu xanh, Chi đỏ [cite: 170]
-                borderColor: '#ffffff',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'right', // Đưa chú thích vào góc bên phải
-                    align: 'start',    // Căn lên phía trên cùng của góc
-                    labels: {
-                        boxWidth: 12,
-                        padding: 15,
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const value = context.raw;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return `Số tiền: ${formatter.format(value)} đ (${percentage}%)`;
-                        }
-                    }
-                }
-            }
+        if (resHd.error || resBill.error || resChi.error || resNhap.error) {
+            throw new Error("Lỗi khi truy vấn dữ liệu thu chi");
         }
-    });
-}
+
+        // Hàm tiện ích chuyển đổi text "1,000,000" sang số
+        const parseAmount = (val) => {
+            if (!val) return 0;
+            return parseInt(val.toString().replace(/[^\d]/g, '')) || 0;
+        };
+
+        // 3. Tính toán tổng Thu (Học phí + Bán hàng)
+        const totalThu = [...resHd.data, ...resBill.data].reduce((sum, item) => sum + parseAmount(item.dadong), 0);
+
+        // 4. Tính toán tổng Chi (Phiếu chi + Nhập kho)
+        const totalChi = [...resChi.data, ...resNhap.data].reduce((sum, item) => {
+            // Kiểm tra cả 2 cột chiphi và thanhtien vì lấy từ 2 bảng khác nhau
+            const amount = parseAmount(item.chiphi || item.thanhtien);
+            return sum + amount;
+        }, 0);
+
+        // Định dạng tiền tệ
+        const formatter = new Intl.NumberFormat('vi-VN');
+        const labelThu = `Tổng Thu: ${formatter.format(totalThu)} đ`;
+        const labelChi = `Tổng Chi: ${formatter.format(totalChi)} đ`;
+
+        // 5. Khởi tạo biểu đồ Pie
+        window.cocauthuchiChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [labelThu, labelChi],
+                datasets: [{
+                    data: [totalThu, totalChi],
+                    backgroundColor: ['#10B981', '#EF4444'], // Xanh cho Thu, Đỏ cho Chi
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'right',
+                        align: 'start',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `Số tiền: ${formatter.format(value)}
 
 async function renderTangtruongloinhuanChart() {
     const ctx = document.getElementById('tangtruongloinhuanChart').getContext('2d');
@@ -1159,112 +1167,107 @@ async function renderCocaudoanhthulopChart() {
     }
 }
 
-// Biểu đồ chăm sóc theo tháng
-function renderThongkenolopChart() 
-{
+// Biểu đồ thống kê nợ theo từng lớp
+async function renderThongkenolopChart() {
     const ctx = document.getElementById('thongkenolopChart').getContext('2d');
     
-    // Hủy biểu đồ cũ nếu tồn tại
-    if (thongkenolopChart) {
-        thongkenolopChart.destroy();
+    // 1. Hủy biểu đồ cũ nếu tồn tại
+    if (window.thongkenolopChart instanceof Chart) {
+        window.thongkenolopChart.destroy();
     }
-    
-    const sourceDebt = {}; 
-    
-    // 1. Khởi tạo dữ liệu nợ bằng 0 cho tất cả các nguồn (lớp) hiện có
-    sources.forEach(source => {
-        sourceDebt[source.name] = 0;
-    });
 
-    // 2. Tạo bản đồ tra cứu nhanh: customer.id -> customer.source
-    const customerSourceMap = {};
-    customers.forEach(c => {
-        customerSourceMap[c.id] = c.source;
-    });
-    
-    // 3. Tính toán tổng nợ từ dữ liệu hóa đơn (invoiceData)
-    if (Array.isArray(invoiceData)) {
-        invoiceData.forEach(inv => {
-            const mahv = inv.id; 
-            const source = customerSourceMap[mahv] || 'Chưa xác định';
+    try {
+        // 2. Truy vấn Supabase: Lấy tên lớp và tiền nợ của học viên
+        // Chỉ lấy những học viên có nợ (conno > 0)
+        const { data, error } = await supabase
+            .from('tbl_hv')
+            .select(`
+                conno,
+                tbl_lop (tenlop)
+            `)
+            .gt('conno', 0); // Lọc nợ lớn hơn 0
+
+        if (error) throw error;
+
+        const sourceDebt = {};
+
+        // 3. Xử lý cộng dồn nợ theo từng lớp
+        data.forEach(item => {
+            const tenLop = item.tbl_lop?.tenlop || 'Lớp chưa xác định';
             
-            // Làm sạch dữ liệu tiền nợ và cộng dồn
-            const debtAmount = parseInt(inv.conno?.toString().replace(/[^\d]/g, '')) || 0;
-            
-            if (sourceDebt[source] === undefined) {
-                sourceDebt[source] = 0;
-            }
-            sourceDebt[source] += debtAmount;
+            // Xử lý chuỗi tiền nợ (loại bỏ ký tự không phải số)
+            const rawDebt = item.conno ? item.conno.toString().replace(/[^\d]/g, '') : "0";
+            const debtAmount = parseInt(rawDebt) || 0;
+
+            sourceDebt[tenLop] = (sourceDebt[tenLop] || 0) + debtAmount;
         });
-    }
-    
-    const sourceNames = Object.keys(sourceDebt);
-    const debtValues = Object.values(sourceDebt);
-    const colors = generateChartColors(sourceNames.length);
-    
-    // 4. Khởi tạo biểu đồ cột với nhãn dọc trong thân cột
-    thongkenolopChart = new Chart(ctx, {
-        type: 'bar',
-        plugins: [ChartDataLabels], // Kích hoạt plugin hiển thị nhãn
-        data: {
-            labels: sourceNames,
-            datasets: [{
-                label: 'Tổng tiền còn nợ (VNĐ)',
-                data: debtValues,
-                backgroundColor: colors,
-                borderColor: colors,
-                borderWidth: 1,
-                borderRadius: 4,
-                // Cấu hình hiển thị số liệu bên trong thân cột
-                datalabels: {
-                    anchor: 'center', // Vị trí neo ở giữa cột
-                    align: 'center',  // Căn giữa
-                    rotation: -90,    // Xoay dọc chữ 90 độ ngược chiều kim đồng hồ
-                    color: '#ffffff', // Chữ màu trắng để nổi bật trên nền màu
-                    font: {
-                        weight: 'bold',
-                        size: 11
-                    },
-                    formatter: function(value) {
-                        if (value === 0) return ''; // Không hiện nếu không có nợ
-                        // Định dạng rút gọn: Triệu (Tr) hoặc Ngàn (K)
-                        if (value >= 1000000) return (value / 1000000).toFixed(1) + ' Tr';
-                        if (value >= 1000) return (value / 1000).toFixed(0) + ' K';
-                        return value;
-                    }
-                }
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Còn nợ: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
+
+        const sourceNames = Object.keys(sourceDebt);
+        const debtValues = Object.values(sourceDebt);
+
+        if (sourceNames.length === 0) {
+            console.warn("Không có dữ liệu nợ lớp.");
+            return;
+        }
+
+        const colors = generateChartColors(sourceNames.length);
+
+        // 4. Khởi tạo biểu đồ cột
+        window.thongkenolopChart = new Chart(ctx, {
+            type: 'bar',
+            plugins: [ChartDataLabels],
+            data: {
+                labels: sourceNames,
+                datasets: [{
+                    label: 'Tổng tiền còn nợ (VNĐ)',
+                    data: debtValues,
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    datalabels: {
+                        anchor: 'center',
+                        align: 'center',
+                        rotation: -90,
+                        color: '#ffffff',
+                        font: { weight: 'bold', size: 11 },
+                        formatter: function(value) {
+                            if (value >= 1000000) return (value / 1000000).toFixed(1) + ' Tr';
+                            if (value >= 1000) return (value / 1000).toFixed(0) + ' K';
+                            return value;
                         }
                     }
-                }
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            if (value >= 1000000) return (value / 1000000) + 'M';
-                            return new Intl.NumberFormat('vi-VN').format(value);
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => 'Còn nợ: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ'
                         }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Số tiền nợ (VNĐ)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => {
+                                if (value >= 1000000) return (value / 1000000) + 'M';
+                                return new Intl.NumberFormat('vi-VN').format(value);
+                            }
+                        },
+                        title: { display: true, text: 'Số tiền nợ (VNĐ)' }
                     }
                 }
             }
-        }
-    });
+        });
+
+    } catch (err) {
+        console.error("Lỗi khi tải thống kê nợ lớp:", err.message);
+    }
 }
 
 // BIỂU ĐỒ MỚI 1: Tăng trưởng học viên
