@@ -418,7 +418,7 @@ async function performLogin() {
 
         hideLoginModal();
         showUserInfo();
-        initApp(); // Reload app with user permissions
+       // initApp(); // Reload app with user permissions
 
     } catch (error) {
         console.error('Lỗi đăng nhập:', error);
