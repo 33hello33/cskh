@@ -88,18 +88,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function initApp() {
-     try {
+  try {
         document.getElementById('login-modal').style.display = 'none';
-       
-        // 1. Kiểm tra session Nhân viên
-    const userSession = JSON.parse(localStorage.getItem('userLogin'));
-    if (userSession && now < userSession.expiry) {
-        document.getElementById('login-modal').style.display = 'none';
-        console.log("Chào mừng nhân viên trở lại:", userSession.user);
-        // Gọi hàm load dữ liệu nhân viên tại đây
-        return; 
-    }
-       
+        currentSessionId = localStorage.getItem('currentSessionId');
 
 // THAY THẾ google.script.run:
         const result = await callGAS('getAllData', currentSessionId );
@@ -247,14 +238,8 @@ async function performLogin() {
             currentUser = result.user;
             currentSessionId = result.sessionId;
 
-            // Giả sử đăng nhập thành công:
-             const now = new Date().getTime();
-             const loginData = {
-                 user: currentUser,
-                 expiry: now + (1 * 60 * 60 * 1000) // 1 tiếng = 3600000 ms
-             };
-             
-             localStorage.setItem('userLogin', JSON.stringify(loginData));
+            // Lưu sessionId vào localStorage
+            localStorage.setItem('currentSessionId', currentSessionId);
 
             hideLoginModal();
             showUserInfo();
