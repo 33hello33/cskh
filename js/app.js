@@ -482,7 +482,7 @@ function showUserInfo() {
         document.getElementById('user-info').style.display = 'flex';
 
         // Add manager class if user is manager
-        if (currentUser.isManager) {
+        if (currentUser.role == 'Nhân viên VP') {
             document.body.classList.add('manager-user');
         } else {
             document.body.classList.remove('manager-user');
