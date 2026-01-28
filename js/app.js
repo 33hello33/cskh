@@ -679,7 +679,7 @@ function renderReports() {
 
 //    renderOverviewCards();
 //    renderCocauthuchiChartChart();
-//    renderTangtruongdoanhthuChart();
+    renderTangtruongdoanhthuChart();
 //    renderTangtruongloinhuanChart();
 //    renderTopCustomersByRevenue();
     renderCocaudoanhthulopChart();
@@ -945,100 +945,106 @@ function renderTangtruongloinhuanChart() {
     });
 }
 
-// Render staff chart
-function renderTangtruongdoanhthuChart() {
+// Biểu đồ: tăng trưởng doanh thu
+async function renderTangtruongdoanhthuChart() {
     const ctx = document.getElementById('tangtruongdoanhthuChart').getContext('2d');
     
-    if (tangtruongdoanhthuChart) {
-        tangtruongdoanhthuChart.destroy();
+    if (window.tangtruongdoanhthuChart instanceof Chart) {
+        window.tangtruongdoanhthuChart.destroy();
     }
 
     const monthlyRevenue = {};
     const currentDate = new Date();
+    const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 11, 1);
+    const startDateISO = startDate.toISOString();
 
-    // 1. Khởi tạo dữ liệu cho 12 tháng gần nhất
+    // 1. Khởi tạo khung 12 tháng gần nhất
     for (let i = 11; i >= 0; i--) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
         monthlyRevenue[monthKey] = 0;
     }
-   
-// SỬA TẠI ĐÂY: Thêm kiểm tra invoiceData
-    if (!invoiceData || !Array.isArray(invoiceData)) {
-        console.warn("invoiceData chưa sẵn sàng hoặc không phải mảng");
-        return; 
-    }
-   
-    // 2. Tích lũy doanh thu từ dữ liệu invoice
-    invoiceData.forEach(inv => {
-        if (inv.ngaylap) {
-            // Chuyển đổi ngaylap thành đối tượng Date
-            const date = new Date(inv.ngaylap);
-            const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            // Nếu tháng này nằm trong khung 12 tháng, cộng dồn số tiền đã đóng
-            if (monthlyRevenue[monthKey] !== undefined) {
-                // Đảm bảo dadong là số (loại bỏ dấu phẩy nếu có và chuyển kiểu)
-                const amount = parseFloat(inv.dadong.toString().replace(/[^\d]/g, '')) || 0;
-                monthlyRevenue[monthKey] += amount;
-            }
-        }
-    });
 
-    const months = Object.keys(monthlyRevenue);
-    const monthLabels = months.map(month => {
-        const [year, monthNum] = month.split('-');
-        return `${monthNum}/${year}`;
-    });
+    try {
+        // 2. Gọi song song dữ liệu từ 2 bảng để tăng tốc độ
+        const [resHd, resBill] = await Promise.all([
+            supabaseClient.from('tbl_hd').select('ngaylap, dadong').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_billhanghoa').select('ngaylap, dadong').gte('ngaylap', startDateISO)
+        ]);
 
-    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
+        if (resHd.error) throw resHd.error;
+        if (resBill.error) throw resBill.error;
 
-    tangtruongdoanhthuChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: monthLabels,
-            datasets: [{
-                label: 'Doanh thu thực thu',
-                data: Object.values(monthlyRevenue),
-                borderColor: successColor,
-                backgroundColor: hexToRgba(successColor, 0.1),
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                borderWidth: 3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: commonLegendConfig,
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
-                        }
-                    }
+        // Gộp dữ liệu từ 2 nguồn vào một mảng chung
+        const allInvoices = [...resHd.data, ...resBill.data];
+
+        // 3. Tích lũy doanh thu
+        allInvoices.forEach(inv => {
+            if (inv.ngaylap) {
+                const date = new Date(inv.ngaylap);
+                const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                
+                if (monthlyRevenue.hasOwnProperty(monthKey)) {
+                    // Xử lý chuyển đổi chuỗi tiền tệ (xóa dấu phẩy, dấu chấm nếu có)
+                    const rawAmount = inv.dadong ? inv.dadong.toString().replace(/[^\d]/g, '') : "0";
+                    const amount = parseFloat(rawAmount) || 0;
+                    monthlyRevenue[monthKey] += amount;
                 }
+            }
+        });
+
+        const months = Object.keys(monthlyRevenue);
+        const monthLabels = months.map(month => {
+            const [year, monthNum] = month.split('-');
+            return `${monthNum}/${year}`;
+        });
+
+        const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
+
+        // 4. Khởi tạo biểu đồ
+        window.tangtruongdoanhthuChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Doanh thu tổng (Học phí + Hàng hóa)',
+                    data: Object.values(monthlyRevenue),
+                    borderColor: successColor,
+                    backgroundColor: typeof hexToRgba === 'function' ? hexToRgba(successColor, 0.1) : successColor + '1A',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    borderWidth: 3
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'VNĐ'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            // Rút gọn hiển thị trục Y (ví dụ 1.000.000 -> 1M)
-                            if (value >= 1000000) return (value / 1000000) + 'M';
-                            return new Intl.NumberFormat('vi-VN').format(value);
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: typeof commonLegendConfig !== 'undefined' ? commonLegendConfig : { display: true },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `Doanh thu: ${new Intl.NumberFormat('vi-VN').format(context.raw)} đ`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => {
+                                if (value >= 1000000) return (value / 1000000) + 'M';
+                                return new Intl.NumberFormat('vi-VN').format(value);
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+
+    } catch (err) {
+        console.error("Lỗi khi tải doanh thu từ Supabase:", err.message);
+    }
 }
 
 
