@@ -1358,84 +1358,91 @@ function renderTangtruonghocvienChart()
     });
 }
 
-// BIỂU ĐỒ MỚI 2: Doanh thu theo nguồn khách
-function renderSisotunglopChart() {
+// BIỂU ĐỒ MỚI 2: Sĩ số theo từng lớp
+async function renderSisotunglopChart() {
     const ctx = document.getElementById('sisotunglopChart').getContext('2d');
     
-    if (sisotunglopChart) {
-        sisotunglopChart.destroy();
+    // Hủy chart cũ nếu tồn tại
+    if (window.sisotunglopChart instanceof Chart) {
+        window.sisotunglopChart.destroy();
     }
-    
-    const sourceCustomerCount = {}; // Thống kê số lượng học viên theo nguồn
-    
-    // 1. Khởi tạo dữ liệu từ danh sách nguồn
-    sources.forEach(source => {
-        sourceCustomerCount[source.name] = 0;
-    });
-    
-    // 2. Thống kê số lượng khách hàng theo nguồn dựa trên bộ lọc hiện tại
-    getFilteredCustomers('created').forEach(customer => {
-        const source = customer.source || 'Chưa xác định';
-        
-        if (sourceCustomerCount[source] === undefined) {
-            sourceCustomerCount[source] = 0;
+
+    try {
+        // 1. Truy vấn Supabase: Lấy tên lớp và đếm số lượng học viên
+        // Lưu ý: Phải thiết lập Foreign Key giữa tbl_hv(malop) và tbl_lop(malop) trong DB
+        const { data, error } = await supabase
+            .from('tbl_lop')
+            .select(`
+                tenlop,
+                tbl_hv (count)
+            `);
+
+        if (error) throw error;
+
+        // 2. Xử lý dữ liệu trả về
+        // Supabase trả về format: [{ tenlop: 'Lớp A', tbl_hv: [{ count: 10 }] }, ...]
+        const filteredData = data
+            .map(item => ({
+                label: item.tenlop,
+                count: item.tbl_hv[0]?.count || 0
+            }))
+            .filter(item => item.count > 0); // Lọc bỏ lớp không có học viên (tùy chọn)
+
+        const labels = filteredData.map(item => `${item.label}: ${item.count} học viên`);
+        const counts = filteredData.map(item => item.count);
+        const rawNames = filteredData.map(item => item.label);
+
+        if (counts.length === 0) {
+            console.warn("Không có dữ liệu sĩ số lớp.");
+            return;
         }
-        
-        sourceCustomerCount[source] += 1;
-    });
-    
-    // 3. Chuẩn bị dữ liệu và lọc bỏ các nguồn không có học viên để Legend gọn gàng hơn
-    const sourceNames = Object.keys(sourceCustomerCount).filter(name => sourceCustomerCount[name] > 0);
-    const countValues = sourceNames.map(name => sourceCustomerCount[name]);
-    
-    // Tạo mảng nhãn hiển thị ở Legend kèm số lượng: "Tên nguồn: X học viên"
-    const displayLabels = sourceNames.map(name => `${name}: ${sourceCustomerCount[name]} học viên`);
-    
-    const colors = generateChartColors(sourceNames.length);
-    
-    sisotunglopChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: displayLabels, // Sử dụng nhãn đã kèm số liệu
-            datasets: [{
-                data: countValues,
-                backgroundColor: colors,
-                borderColor: '#ffffff',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'right', // Đưa chú thích vào góc bên phải
-                    align: 'start',    // Căn lề từ phía trên xuống
-                    labels: {
-                        boxWidth: 12,
-                        padding: 15,
-                        font: {
-                            size: 11,
-                            weight: 'bold'
+
+        // 3. Khởi tạo Chart
+        const colors = generateChartColors(counts.length);
+
+        window.sisotunglopChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: colors,
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'right',
+                        align: 'start',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            font: { size: 11, weight: 'bold' }
                         }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const value = context.raw;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            // Lấy lại tên nguồn gốc (không kèm số lượng) để hiển thị trong tooltip
-                            const sourceName = sourceNames[context.dataIndex];
-                            return `${sourceName}: ${value} học viên (${percentage}%)`;
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                const sourceName = rawNames[context.dataIndex];
+                                return `${sourceName}: ${value} học viên (${percentage}%)`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+
+    } catch (err) {
+        console.error("Lỗi khi tải biểu đồ sĩ số:", err.message);
+    }
 }
 
 // BIỂU ĐỒ MỚI 3: Doanh thu theo nhân viên
