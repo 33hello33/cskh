@@ -1370,7 +1370,7 @@ async function renderSisotunglopChart() {
     try {
         // 1. Truy vấn Supabase: Lấy tên lớp và đếm số lượng học viên
         // Lưu ý: Phải thiết lập Foreign Key giữa tbl_hv(malop) và tbl_lop(malop) trong DB
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('tbl_lop')
             .select(`
                 tenlop,
