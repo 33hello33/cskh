@@ -218,10 +218,10 @@ async function loadLatestFeeNotification(studentId) {
             document.getElementById('fee-deadline').innerText = hanDong;
             
             // 4. Ngày bắt đầu 
-            document.getElementById('fee-startdate').innerText = data.ngaybatdau.toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
+            document.getElementById('fee-startdate').innerText = new Date(data.ngaybatdau).toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
             
             // 5. Ngày kết thúc
-            document.getElementById('fee-enddate').innerText = data.ngayketthuc.toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
+            document.getElementById('fee-enddate').innerText = new Date(data.ngayketthuc).toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
             
             // 6. Ghi chú
             document.getElementById('fee-note').innerText = data.ghichu || "Không có ghi chú";
