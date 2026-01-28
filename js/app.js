@@ -396,21 +396,29 @@ async function performLogin() {
     try {
         showButtonLoading('#login-modal .btn-success', 'Đang đăng nhập...');
 
-        const result = await callGAS('login', username, password );
+       const { data: user, error } = await supabaseClient
+            .from('tbl_nv')
+            .select('manv, tennv, username, role, password')
+            .eq('username', usernameInput)
+            .eq('password', passwordInput) // Lưu ý: Nên mã hóa password nếu làm hệ thống lớn
+            .single(); // Lấy 1 bản ghi duy nhất
 
-        if (result.success) {
-            currentUser = result.user;
-            currentSessionId = result.sessionId;
-
-            // Lưu sessionId vào localStorage
-            localStorage.setItem('currentSessionId', currentSessionId);
-
-            hideLoginModal();
-            showUserInfo();
-            initApp(); // Reload app with user permissions
-        } else {
-            showNotification(result.error, 'error');
+        if (error || !user) {
+            console.error("Lỗi login:", error);
+            showNotification('Sai tên đăng nhập hoặc mật khẩu', 'error');
+            return;
         }
+
+        // 2. Nếu đăng nhập thành công
+        currentUser = user;
+        currentSessionId = `session_${user.manv}_${Date.now()}`;
+        
+        // Lưu sessionId vào localStorage
+        localStorage.setItem('currentSessionId', currentSessionId);
+
+        hideLoginModal();
+        showUserInfo();
+        initApp(); // Reload app with user permissions
 
     } catch (error) {
         console.error('Lỗi đăng nhập:', error);
