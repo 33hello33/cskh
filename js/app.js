@@ -96,7 +96,7 @@ async function initApp() {
   try {
         document.getElementById('login-modal').style.display = 'none';
         currentSessionId = localStorage.getItem('currentSessionId');
-
+/*
 // THAY THẾ google.script.run:
         const result = await callGAS('getAllData', currentSessionId );
 
@@ -119,7 +119,7 @@ async function initApp() {
         updateReminderTabBadge();
 
         // -----------------------------------------
-
+*/
         showUserInfo();
         renderStatusTabs();
         setupPagination();
