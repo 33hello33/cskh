@@ -677,16 +677,16 @@ function renderReports() {
         initializeReportDateRange();
     }
 
-    renderOverviewCards();
-    renderCocauthuchiChartChart();
-    renderTangtruongdoanhthuChart();
-    renderTangtruongloinhuanChart();
-    renderTopCustomersByRevenue();
-    renderCocaudoanhthulopChart();
-    renderThongkenolopChart();
-    renderTangtruonghocvienChart();
+//    renderOverviewCards();
+//    renderCocauthuchiChartChart();
+//    renderTangtruongdoanhthuChart();
+//    renderTangtruongloinhuanChart();
+//    renderTopCustomersByRevenue();
+//    renderCocaudoanhthulopChart();
+//    renderThongkenolopChart();
+//    renderTangtruonghocvienChart();
     renderSisotunglopChart();
-    renderStaffRevenueChart();
+//    renderStaffRevenueChart();
 }
 
 // Render overview cards
