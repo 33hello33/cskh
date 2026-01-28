@@ -433,7 +433,7 @@ async function performLogout() {
     try {
         showButtonLoading('#user-info .btn-secondary', 'Đang thoát...');
 
-        await callGAS('logout', currentSessionId);
+        // await callGAS('logout', currentSessionId);
 
         currentUser = null;
         currentSessionId = null;
