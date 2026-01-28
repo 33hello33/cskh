@@ -52,7 +52,7 @@ let currentUser = null;
 let currentSessionId = null;
 
 // Thêm biến global cho charts
-let statusChart, staffChart, trendChart, staffPerformanceChart, monthlyChart, sourceChart, sourceRevenueChart, staffRevenueChart;
+let cocauthuchiChart, tangtruongdoanhthuChart, tangtruongloinhuanChart, cocaudoanhthulopChart, thongkenolopChart, tangtruonghocvienChart, sisotunglopChart, staffRevenueChart;
 
 let sources = [];
 let careNeededFilter = false;
@@ -678,14 +678,14 @@ function renderReports() {
     }
 
     renderOverviewCards();
-    renderStatusChart();
-    renderStaffStackedChart();
-    renderTrendChart();
+    renderCocauthuchiChartChart();
+    renderTangtruongdoanhthuChart();
+    renderTangtruongloinhuanChart();
     renderTopCustomersByRevenue();
-    renderStaffPerformanceChart();
-    renderMonthlyChart();
-    renderSourceChart();
-    renderSourceRevenueChart();
+    renderCocaudoanhthulopChart();
+    renderThongkenolopChart();
+    renderTangtruonghocvienChart();
+    renderSisotunglopChart();
     renderStaffRevenueChart();
 }
 
@@ -781,12 +781,12 @@ function generateChartColors(itemCount) {
 }
 
 // Render status chart
-function renderStatusChart() 
+function renderCocauthuchiChart() 
 {
-    const ctx = document.getElementById('statusChart').getContext('2d');
+    const ctx = document.getElementById('cocauthuchiChart').getContext('2d');
     
-    if (statusChart) {
-        statusChart.destroy();
+    if (cocauthuchiChart) {
+        cocauthuchiChart.destroy();
     }
 
     let totalThu = 0;
@@ -807,7 +807,7 @@ function renderStatusChart()
     const labelThu = `Thu: ${formatter.format(totalThu)} đ`;
     const labelChi = `Chi: ${formatter.format(totalChi)} đ`;
 
-    statusChart = new Chart(ctx, {
+    cocauthuchiChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: [labelThu, labelChi],
@@ -850,11 +850,11 @@ function renderStatusChart()
     });
 }
 
-function renderTrendChart() {
-    const ctx = document.getElementById('trendChart').getContext('2d');
+function renderTangtruongloinhuanChart() {
+    const ctx = document.getElementById('tangtruongloinhuanChart').getContext('2d');
 
-    if (trendChart) {
-        trendChart.destroy();
+    if (tangtruongloinhuanChart) {
+        tangtruongloinhuanChart.destroy();
     }
 
     const monthlyRevenue = {};
@@ -897,7 +897,7 @@ function renderTrendChart() {
 
     const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
 
-    trendChart = new Chart(ctx, {
+    tangtruongloinhuanChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: monthLabels,
@@ -946,11 +946,11 @@ function renderTrendChart() {
 }
 
 // Render staff chart
-function renderStaffStackedChart() {
-    const ctx = document.getElementById('staffChart').getContext('2d');
+function renderTangtruongdoanhthuChart() {
+    const ctx = document.getElementById('tangtruongdoanhthuChart').getContext('2d');
     
-    if (staffChart) {
-        staffChart.destroy();
+    if (tangtruongdoanhthuChart) {
+        tangtruongdoanhthuChart.destroy();
     }
 
     const monthlyRevenue = {};
@@ -993,7 +993,7 @@ function renderStaffStackedChart() {
 
     const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
 
-    staffChart = new Chart(ctx, {
+    tangtruongdoanhthuChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: monthLabels,
@@ -1042,13 +1042,13 @@ function renderStaffStackedChart() {
 }
 
 
-function renderStaffPerformanceChart()
+function renderCocaudoanhthulopChart()
 {
-    const ctx = document.getElementById('staffPerformanceChart').getContext('2d');
+    const ctx = document.getElementById('cocaudoanhthulopChart').getContext('2d');
     
     // Hủy biểu đồ cũ nếu tồn tại để vẽ biểu đồ mới
-    if (staffPerformanceChart) {
-        staffPerformanceChart.destroy();
+    if (cocaudoanhthulopChart) {
+        cocaudoanhthulopChart.destroy();
     }
     
     const sourceRevenue = {}; 
@@ -1094,7 +1094,7 @@ function renderStaffPerformanceChart()
     const colors = generateChartColors(sourceNames.length);
     
     // 5. Khởi tạo Pie Chart
-    staffPerformanceChart = new Chart(ctx, {
+    cocaudoanhthulopChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: displayLabels, // Sử dụng nhãn đã kèm số tiền
@@ -1140,13 +1140,13 @@ function renderStaffPerformanceChart()
 }
 
 // Biểu đồ chăm sóc theo tháng
-function renderMonthlyChart() 
+function renderThongkenolopChart() 
 {
-    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    const ctx = document.getElementById('thongkenolopChart').getContext('2d');
     
     // Hủy biểu đồ cũ nếu tồn tại
-    if (monthlyChart) {
-        monthlyChart.destroy();
+    if (thongkenolopChart) {
+        thongkenolopChart.destroy();
     }
     
     const sourceDebt = {}; 
@@ -1183,7 +1183,7 @@ function renderMonthlyChart()
     const colors = generateChartColors(sourceNames.length);
     
     // 4. Khởi tạo biểu đồ cột với nhãn dọc trong thân cột
-    monthlyChart = new Chart(ctx, {
+    thongkenolopChart = new Chart(ctx, {
         type: 'bar',
         plugins: [ChartDataLabels], // Kích hoạt plugin hiển thị nhãn
         data: {
@@ -1248,14 +1248,14 @@ function renderMonthlyChart()
 }
 
 // BIỂU ĐỒ MỚI 1: Khách hàng theo nguồn
-function renderSourceChart() 
+function renderTangtruonghocvienChart() 
 {
-    const ctx = document.getElementById('sourceChart').getContext('2d');
+    const ctx = document.getElementById('tangtruonghocvienChart').getContext('2d');
     
     const allCustomers = customers; 
 
-    if (sourceChart) {
-        sourceChart.destroy();
+    if (tangtruonghocvienChart) {
+        tangtruonghocvienChart.destroy();
     }
 
     const monthlyData = {};
@@ -1289,7 +1289,7 @@ function renderSourceChart()
 
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
 
-    sourceChart = new Chart(ctx, {
+    tangtruonghocvienChart = new Chart(ctx, {
         type: 'line',
         // Kích hoạt plugin hiển thị nhãn dữ liệu
         plugins: [ChartDataLabels], 
@@ -1359,11 +1359,11 @@ function renderSourceChart()
 }
 
 // BIỂU ĐỒ MỚI 2: Doanh thu theo nguồn khách
-function renderSourceRevenueChart() {
-    const ctx = document.getElementById('sourceRevenueChart').getContext('2d');
+function renderSisotunglopChart() {
+    const ctx = document.getElementById('sisotunglopChart').getContext('2d');
     
-    if (sourceRevenueChart) {
-        sourceRevenueChart.destroy();
+    if (sisotunglopChart) {
+        sisotunglopChart.destroy();
     }
     
     const sourceCustomerCount = {}; // Thống kê số lượng học viên theo nguồn
@@ -1393,7 +1393,7 @@ function renderSourceRevenueChart() {
     
     const colors = generateChartColors(sourceNames.length);
     
-    sourceRevenueChart = new Chart(ctx, {
+    sisotunglopChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: displayLabels, // Sử dụng nhãn đã kèm số liệu
@@ -1591,7 +1591,7 @@ function renderTopCustomersByRevenue() {
         </div>
     `).join('');
 
-    const container = document.getElementById('topCustomersList');
+    const container = document.getElementById('tongcongnotrongthangChart');
     if (container) {
         container.innerHTML = html || '<p class="text-muted text-center">Chưa có dữ liệu doanh thu trong kỳ</p>';
     }
@@ -5019,8 +5019,8 @@ window.saveOrderInfo = saveOrderInfo;
 window.updateStatusDropdownColor = updateStatusDropdownColor;
 
 window.renderTopCustomersByRevenue = renderTopCustomersByRevenue;
-window.renderSourceChart = renderSourceChart;
-window.renderSourceRevenueChart = renderSourceRevenueChart;
+window.renderSourceChart = renderTangtruonghocvienChart;
+window.renderSisotunglopChart = renderSisotunglopChart;
 window.renderStaffRevenueChart = renderStaffRevenueChart;
 window.moveStatus = moveStatus;
 
