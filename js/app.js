@@ -190,7 +190,7 @@ async function loadLatestFeeNotification(studentId) {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
         const { data, error } = await supabaseClient
             .from('tbl_thongbao')
-            .select('hocphi, trangthai, ngaylap, ghichu')
+            .select('hocphi, giamhocphi,ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
             .limit(1)
@@ -206,19 +206,24 @@ async function loadLatestFeeNotification(studentId) {
             // 1. Xử lý số tiền học phí (định dạng VND)
             document.getElementById('fee-amount').innerText = data.hocphi;
 
-            // 2. Xử lý Trạng thái
-            const statusEl = document.getElementById('fee-status');
-            statusEl.innerText = data.trangthai;
-            // Thêm màu sắc cho badge dựa trên trạng thái
-            statusEl.className = 'badge ' + (data.trangthai === 'Đã đóng' ? 'bg-success' : 'bg-danger');
+            // 2. Xử lý số tiền giảm học phí (định dạng VND)
+            document.getElementById('fee-discount-amount').innerText = data.giamhocphi;
 
             // 3. Tính Hạn đóng = ngaylap + 10 ngày
             const ngayLap = new Date(data.ngaylap);
+            document.getElementById('fee-createdate').innerText = ngayLap.toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
+            
             ngayLap.setDate(ngayLap.getDate() + 10);
             const hanDong = ngayLap.toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
             document.getElementById('fee-deadline').innerText = hanDong;
-
-            // 4. Ghi chú
+            
+            // 4. Ngày bắt đầu 
+            document.getElementById('fee-startdate').innerText = data.ngaybatdau.toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
+            
+            // 5. Ngày kết thúc
+            document.getElementById('fee-enddate').innerText = data.ngayketthuc.toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
+            
+            // 6. Ghi chú
             document.getElementById('fee-note').innerText = data.ghichu || "Không có ghi chú";
         }
     } catch (err) {
