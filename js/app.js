@@ -238,8 +238,7 @@ async function load10HoaDonGanNhat(studentId) {
             .select('ngaylap, mahd, hocphi, hinhthuc, ghichu')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
-            .limit(10)
-            .single();
+            .limit(10);
 
         if (error) {
             console.error("Lỗi lấy lịch sử học phí:", error.message);
