@@ -227,7 +227,7 @@ async function loadLatestFeeNotification(studentId) {
 }
 
 // Xử lý khi nhấn nút Tra cứu
-function performTraCuu() {
+async function performTraCuu() {
     // 1. Lấy giá trị mã học sinh
     const studentId = document.getElementById('student-id-search').value;
     
