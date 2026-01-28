@@ -126,7 +126,7 @@ async function initApp() {
         filterCustomers();
         populateDropdowns();
         renderSettingsContent();
-        setupCustomDateFilter();
+        //setupCustomDateFilter();
 
         // Khởi tạo bộ lọc ngày cho history (mặc định hôm nay)
         const historyDateInput = document.getElementById('history-date-filter');
