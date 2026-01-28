@@ -230,7 +230,55 @@ async function loadLatestFeeNotification(studentId) {
         console.error("Lỗi hệ thống:", err);
     }
 }
+async function load10HoaDonGanNhat(studentId) {
+    try {
+        // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
+        const { data: invoices, error } = await supabaseClient
+            .from('tbl_hd')
+            .select('ngaylap, mahd, hocphi, hinhthuc, ghichu')
+            .eq('mahv', studentId) // Giả định cột liên kết là student_id
+            .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
+            .limit(10)
+            .single();
 
+        if (error) {
+            console.error("Lỗi lấy lịch sử học phí:", error.message);
+           // document.getElementById('fee-status').innerText = "Không có dữ liệu";
+            return;
+        }
+
+        const tbody = document.getElementById('history-fee-body');
+        tbody.innerHTML = ""; // Xóa dữ liệu cũ (nếu có) trước khi đổ mới
+        
+        if (invoices && invoices.length > 0) {
+            invoices.forEach(item => {
+                const row = document.createElement('tr');
+        
+                // Định dạng các giá trị
+                const ngaylap = item.ngaylap ? new Date(item.ngaylap).toLocaleDateString('vi-VN') : '-';
+                const hocphi = item.hocphi ? item.sotien.toLocaleString('vi-VN') + " đ" : "0 đ";
+                const hinhThuc = item.hinhthuc || "-";
+                const ghiChu = item.ghichu || "";
+                const maHD = item.mahd || "N/A";
+        
+                row.innerHTML = `
+                    <td>${ngaylap}</td>
+                    <td style="font-weight: bold; color: #007bff;">${maHD}</td>
+                    <td style="color: #28a745; font-weight: bold;">${hocphi}</td>
+                    <td>${hinhThuc}</td>
+                    <td style="font-size: 0.9em; font-style: italic;">${ghiChu}</td>
+                `;
+        
+                tbody.appendChild(row);
+            });
+        } else {
+            // Hiển thị thông báo nếu không có lịch sử
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Chưa có lịch sử đóng phí</td></tr>`;
+        }
+    } catch (err) {
+        console.error("Lỗi hệ thống:", err);
+    }
+}
 // Xử lý khi nhấn nút Tra cứu
 async function performTraCuu() {
     // 1. Lấy giá trị mã học sinh
