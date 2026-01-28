@@ -680,7 +680,7 @@ function renderReports() {
 //    renderOverviewCards();
 //    renderCocauthuchiChartChart();
     renderTangtruongdoanhthuChart();
-//    renderTangtruongloinhuanChart();
+    renderTangtruongloinhuanChart();
 //    renderTopCustomersByRevenue();
     renderCocaudoanhthulopChart();
 //    renderThongkenolopChart();
@@ -850,99 +850,116 @@ function renderCocauthuchiChart()
     });
 }
 
-function renderTangtruongloinhuanChart() {
+async function renderTangtruongloinhuanChart() {
     const ctx = document.getElementById('tangtruongloinhuanChart').getContext('2d');
 
-    if (tangtruongloinhuanChart) {
-        tangtruongloinhuanChart.destroy();
+    if (window.tangtruongloinhuanChart instanceof Chart) {
+        window.tangtruongloinhuanChart.destroy();
     }
 
-    const monthlyRevenue = {};
+    const monthlyProfit = {};
     const currentDate = new Date();
+    const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 11, 1);
+    const startDateISO = startDate.toISOString();
 
-    // 1. Khởi tạo dữ liệu cho 12 tháng gần nhất
+    // 1. Khởi tạo khung 12 tháng với giá trị 0
     for (let i = 11; i >= 0; i--) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        monthlyRevenue[monthKey] = 0;
+        monthlyProfit[monthKey] = 0;
     }
-   
-// SỬA TẠI ĐÂY: Thêm kiểm tra invoiceData
-    if (!invoiceData || !Array.isArray(invoiceData)) {
-        console.warn("invoiceData chưa sẵn sàng hoặc không phải mảng");
-        return; 
-    }
-   
-    // 2. Tích lũy doanh thu từ dữ liệu invoice
-    invoiceData.forEach(inv => {
-        if (inv.ngaylap) {
-            // Chuyển đổi ngaylap thành đối tượng Date
-            const date = new Date(inv.ngaylap);
-            const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            // Nếu tháng này nằm trong khung 12 tháng, cộng dồn số tiền đã đóng
-            if (monthlyRevenue[monthKey] !== undefined) {
-                // Đảm bảo dadong là số (loại bỏ dấu phẩy nếu có và chuyển kiểu)
-                const amount = parseFloat(inv.conno.toString().replace(/[^\d]/g, '')) || 0;
-                monthlyRevenue[monthKey] += amount;
+
+    try {
+        // 2. Lấy dữ liệu từ 4 bảng cùng lúc
+        const [resHd, resBill, resChi, resNhap] = await Promise.all([
+            supabaseClient.from('tbl_hd').select('ngaylap, dadong').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_billhanghoa').select('ngaylap, dadong').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_phieuchi').select('ngaylap, chiphi').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_nhapkho').select('ngaynhap, thanhtien').gte('ngaynhap', startDateISO)
+        ]);
+
+        // Hàm tiện ích để làm sạch và chuyển đổi số tiền
+        const parseMoney = (val) => {
+            if (!val) return 0;
+            return parseFloat(val.toString().replace(/[^\d]/g, '')) || 0;
+        };
+
+        // 3. Xử lý cộng Doanh thu (Hóa đơn & Bán hàng)
+        [...resHd.data || [], ...resBill.data || []].forEach(item => {
+            const date = new Date(item.ngaylap);
+            const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            if (monthlyProfit.hasOwnProperty(key)) {
+                monthlyProfit[key] += parseMoney(item.dadong);
             }
-        }
-    });
+        });
 
-    const months = Object.keys(monthlyRevenue);
-    const monthLabels = months.map(month => {
-        const [year, monthNum] = month.split('-');
-        return `${monthNum}/${year}`;
-    });
+        // 4. Xử lý trừ Chi phí (Phiếu chi)
+        (resChi.data || []).forEach(item => {
+            const date = new Date(item.ngaylap);
+            const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            if (monthlyProfit.hasOwnProperty(key)) {
+                monthlyProfit[key] -= parseMoney(item.chiphi);
+            }
+        });
 
-    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
+        // 5. Xử lý trừ Chi phí (Nhập kho - dùng ngaynhap)
+        (resNhap.data || []).forEach(item => {
+            const date = new Date(item.ngaynhap);
+            const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            if (monthlyProfit.hasOwnProperty(key)) {
+                monthlyProfit[key] -= parseMoney(item.thanhtien);
+            }
+        });
 
-    tangtruongloinhuanChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: monthLabels,
-            datasets: [{
-                label: 'Lợi nhuận từ Tổng thu học phí + bán hàng - phiếu chi - phiếu nhập kho - chi lương',
-                data: Object.values(monthlyRevenue),
-                borderColor: successColor,
-                backgroundColor: hexToRgba(successColor, 0.1),
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                borderWidth: 3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: commonLegendConfig,
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(context.raw) + ' VNĐ';
-                        }
-                    }
-                }
+        const months = Object.keys(monthlyProfit);
+        const monthLabels = months.map(m => `${m.split('-')[1]}/${m.split('-')[0]}`);
+        const profitValues = Object.values(monthlyProfit);
+
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
+
+        // 6. Vẽ biểu đồ
+        window.tangtruongloinhuanChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Lợi nhuận ròng (VNĐ)',
+                    data: profitValues,
+                    borderColor: primaryColor,
+                    backgroundColor: typeof hexToRgba === 'function' ? hexToRgba(primaryColor, 0.1) : primaryColor + '1A',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    borderWidth: 3
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'VNĐ'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            // Rút gọn hiển thị trục Y (ví dụ 1.000.000 -> 1M)
-                            if (value >= 1000000) return (value / 1000000) + 'M';
-                            return new Intl.NumberFormat('vi-VN').format(value);
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `Lợi nhuận: ${new Intl.NumberFormat('vi-VN').format(context.raw)} đ`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => {
+                                if (Math.abs(value) >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                return new Intl.NumberFormat('vi-VN').format(value);
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+
+    } catch (err) {
+        console.error("Lỗi tính toán lợi nhuận:", err.message);
+    }
 }
 
 // Biểu đồ: tăng trưởng doanh thu
