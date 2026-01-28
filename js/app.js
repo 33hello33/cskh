@@ -320,6 +320,8 @@ async function performTraCuu() {
 
         // Gọi hàm load dữ liệu học phí
         await loadLatestFeeNotification(studentId);
+
+        await load10HoaDonGanNhat(studentId);
     }
 
     console.log("Đã thực hiện tra cứu cho mã:", studentId);
