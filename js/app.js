@@ -684,7 +684,7 @@ function renderReports() {
 //    renderTopCustomersByRevenue();
 //    renderCocaudoanhthulopChart();
 //    renderThongkenolopChart();
-//    renderTangtruonghocvienChart();
+    renderTangtruonghocvienChart();
     renderSisotunglopChart();
 //    renderStaffRevenueChart();
 }
@@ -1247,115 +1247,104 @@ function renderThongkenolopChart()
     });
 }
 
-// BIỂU ĐỒ MỚI 1: Khách hàng theo nguồn
-function renderTangtruonghocvienChart() 
-{
+// BIỂU ĐỒ MỚI 1: Tăng trưởng học viên
+async function renderTangtruonghocvienChart() {
     const ctx = document.getElementById('tangtruonghocvienChart').getContext('2d');
     
-    const allCustomers = customers; 
-
-    if (tangtruonghocvienChart) {
-        tangtruonghocvienChart.destroy();
+    if (window.tangtruonghocvienChart instanceof Chart) {
+        window.tangtruonghocvienChart.destroy();
     }
 
+    // 1. Chuẩn bị dải 12 tháng gần nhất
     const monthlyData = {};
     const currentDate = new Date();
+    
+    // Ngày bắt đầu (ngày 1 của 11 tháng trước) để lọc trong DB
+    const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 11, 1);
+    const startDateISO = startDate.toISOString();
 
     for (let i = 11; i >= 0; i--) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        monthlyData[monthKey] = {
-            newCustomers: 0
-        };
+        monthlyData[monthKey] = 0;
     }
 
-    allCustomers.forEach(customer => {
-        if (customer.createdDate) {
-            const date = new Date(customer.createdDate);
-            if (!isNaN(date.getTime())) {
+    try {
+        // 2. Lấy dữ liệu từ Supabase (Chỉ lấy cột ngaynhaphoc của những người nhập học trong 12 tháng qua)
+        const { data, error } = await supabaseClient
+            .from('tbl_hv')
+            .select('ngaynhaphoc')
+            .gte('ngaynhaphoc', startDateISO); // Lọc các bản ghi >= startDate
+
+        if (error) throw error;
+
+        // 3. Phân loại dữ liệu vào các tháng
+        data.forEach(hv => {
+            if (hv.ngaynhaphoc) {
+                const date = new Date(hv.ngaynhaphoc);
                 const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                if (monthlyData[monthKey]) {
-                    monthlyData[monthKey].newCustomers++;
+                if (monthlyData.hasOwnProperty(monthKey)) {
+                    monthlyData[monthKey]++;
                 }
             }
-        }
-    });
+        });
 
-    const months = Object.keys(monthlyData);
-    const monthLabels = months.map(month => {
-        const [year, monthNum] = month.split('-');
-        return `${monthNum}/${year}`;
-    });
+        // 4. Chuẩn bị nhãn và dữ liệu cho Chart
+        const months = Object.keys(monthlyData);
+        const monthLabels = months.map(month => {
+            const [year, monthNum] = month.split('-');
+            return `${monthNum}/${year}`;
+        });
+        const chartData = months.map(month => monthlyData[month]);
 
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
 
-    tangtruonghocvienChart = new Chart(ctx, {
-        type: 'line',
-        // Kích hoạt plugin hiển thị nhãn dữ liệu
-        plugins: [ChartDataLabels], 
-        data: {
-            labels: monthLabels,
-            datasets: [
-                {
+        // 5. Khởi tạo Chart
+        window.tangtruonghocvienChart = new Chart(ctx, {
+            type: 'line',
+            plugins: [ChartDataLabels],
+            data: {
+                labels: monthLabels,
+                datasets: [{
                     label: 'Số lượng học viên mới',
-                    data: months.map(month => monthlyData[month].newCustomers),
+                    data: chartData,
                     borderColor: primaryColor,
-                    backgroundColor: hexToRgba(primaryColor, 0.1),
+                    backgroundColor: typeof hexToRgba === 'function' ? hexToRgba(primaryColor, 0.1) : primaryColor + '1A',
                     tension: 0.4,
                     fill: true,
-                    pointRadius: 6, // Tăng kích thước điểm để dễ nhìn số liệu
+                    pointRadius: 6,
                     pointHoverRadius: 8,
-                    // Cấu hình nhãn dữ liệu cho riêng tập dữ liệu này
                     datalabels: {
-                        align: 'top',    // Hiển thị phía trên điểm nút
-                        anchor: 'end',   // Neo vào điểm cuối của dữ liệu
-                        offset: 4,       // Khoảng cách so với điểm
-                        color: primaryColor, // Màu chữ
-                        font: {
-                            weight: 'bold',
-                            size: 11
-                        },
-                        formatter: function(value) {
-                            return value > 0 ? value : ''; // Chỉ hiện nếu số lượng > 0
-                        }
+                        align: 'top',
+                        anchor: 'end',
+                        offset: 4,
+                        color: primaryColor,
+                        font: { weight: 'bold', size: 11 },
+                        formatter: (val) => val > 0 ? val : ''
                     }
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            // Đảm bảo không bị cắt mất nhãn ở phía trên cùng của biểu đồ
-            layout: {
-                padding: {
-                    top: 25 
-                }
+                }]
             },
-            plugins: {
-                legend: commonLegendConfig,
-                tooltip: {
-                    mode: 'index',
-                    intersect: false
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 25 } },
+                plugins: {
+                    legend: typeof commonLegendConfig !== 'undefined' ? commonLegendConfig : { display: true },
+                    tooltip: { mode: 'index', intersect: false },
+                    datalabels: { display: true }
                 },
-                // Vô hiệu hóa nhãn dữ liệu mặc định cho các thành phần khác nếu cần
-                datalabels: {
-                    display: true 
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    },
-                    title: {
-                        display: true,
-                        text: 'Khách hàng'
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 },
+                        title: { display: true, text: 'Học viên' }
                     }
                 }
             }
-        }
-    });
+        });
+    } catch (err) {
+        console.error("Lỗi khi tải biểu đồ tăng trưởng:", err.message);
+    }
 }
 
 // BIỂU ĐỒ MỚI 2: Sĩ số theo từng lớp
@@ -1432,7 +1421,7 @@ async function renderSisotunglopChart() {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = ((value / total) * 100).toFixed(1);
                                 const sourceName = rawNames[context.dataIndex];
-                                return `${sourceName}: ${value} học viên (${percentage}%)`;
+                                return `${sourceName}: ${value} hv (${percentage}%)`;
                             }
                         }
                     }
