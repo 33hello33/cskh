@@ -367,6 +367,8 @@ async function performTraCuu() {
         await loadLatestFeeNotification(studentId);
 
         await load10HoaDonGanNhat(studentId);
+
+        await load30DiemDanhGanNhat(studentId)
     }
 
     console.log("Đã thực hiện tra cứu cho mã:", studentId);
