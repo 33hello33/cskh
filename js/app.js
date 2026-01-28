@@ -92,13 +92,14 @@ async function initApp() {
         document.getElementById('login-modal').style.display = 'none';
        
         // 1. Kiểm tra session Nhân viên
-    const userSession = JSON.parse(localStorage.getItem('userLogin'));
-    if (userSession && now < userSession.expiry) {
-        document.getElementById('login-modal').style.display = 'none';
-        console.log("Chào mừng nhân viên trở lại:", userSession.user);
-        // Gọi hàm load dữ liệu nhân viên tại đây
-        return; 
-    }
+       const now = new Date().getTime();
+       const userSession = JSON.parse(localStorage.getItem('userLogin'));
+       if (userSession && now < userSession.expiry) {
+           document.getElementById('login-modal').style.display = 'none';
+           console.log("Chào mừng nhân viên trở lại:", userSession.user);
+           // Gọi hàm load dữ liệu nhân viên tại đây
+           return; 
+       }
        
 
 // THAY THẾ google.script.run:
