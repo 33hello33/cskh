@@ -190,10 +190,7 @@ function performTraCuu() {
     }
 
     // 2. Ẩn Modal Đăng nhập (Phải khớp ID trong HTML)
-    const loginModal = document.getElementById('login-modal');
-    if (loginModal) {
-        loginModal.style.display = 'none'; // Ẩn hoàn toàn modal
-    }
+    hideLoginModal();
 
     // 3. Ẩn Container chính của nhân viên (Nếu cần)
     const mainContainer = document.querySelector('.container');
