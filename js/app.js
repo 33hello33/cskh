@@ -153,19 +153,29 @@ async function initApp() {
 function toggleLoginMode(mode) {
     const loginForm = document.getElementById('login-form');
     const traCuuForm = document.getElementById('tra-cuu-form');
-    const btnStaff = document.getElementById('mode-staff');
-    const btnParent = document.getElementById('mode-parent');
+    // Tìm container
+    const toggleContainer = document.querySelector('.login-toggle-container'); 
+    const btnStaff = document.getElementById('btn-staff');
+    const btnParent = document.getElementById('btn-parent');
+
+    // Kiểm tra nếu toggleContainer tồn tại mới chạy tiếp để tránh lỗi null
+    if (!toggleContainer) {
+        console.error("Không tìm thấy phần tử .login-toggle-container trong HTML!");
+        return; 
+    }
 
     if (mode === 'parent') {
-        loginForm.style.display = 'none';
-        traCuuForm.style.display = 'block';
-        btnParent.classList.add('active');
-        btnStaff.classList.remove('active');
+        if(loginForm) loginForm.style.display = 'none';
+        if(traCuuForm) traCuuForm.style.display = 'block';
+        toggleContainer.classList.add('is-parent'); // Dòng 167 an toàn hơn
+        if(btnParent) btnParent.classList.add('active');
+        if(btnStaff) btnStaff.classList.remove('active');
     } else {
-        loginForm.style.display = 'block';
-        traCuuForm.style.display = 'none';
-        btnStaff.classList.add('active');
-        btnParent.classList.remove('active');
+        if(loginForm) loginForm.style.display = 'block';
+        if(traCuuForm) traCuuForm.style.display = 'none';
+        toggleContainer.classList.remove('is-parent');
+        if(btnStaff) btnStaff.classList.add('active');
+        if(btnParent) btnParent.classList.remove('active');
     }
 }
 
