@@ -793,10 +793,10 @@ async function renderCocauthuchiChart() {
         // 2. Gọi Supabase lấy dữ liệu từ 4 bảng
         // Chúng ta lấy toàn bộ để tính tổng tích lũy (hoặc thêm .gte để lọc theo thời gian nếu cần)
         const [resHd, resBill, resChi, resNhap] = await Promise.all([
-            supabase.from('tbl_hd').select('dadong'),
-            supabase.from('tbl_billhanghoa').select('dadong'),
-            supabase.from('tbl_phieuchi').select('chiphi'),
-            supabase.from('tbl_nhapkho').select('thanhtien')
+            supabaseClient.from('tbl_hd').select('dadong'),
+            supabaseClient.from('tbl_billhanghoa').select('dadong'),
+            supabaseClient.from('tbl_phieuchi').select('chiphi'),
+            supabaseClient.from('tbl_nhapkho').select('thanhtien')
         ]);
 
         if (resHd.error || resBill.error || resChi.error || resNhap.error) {
@@ -856,7 +856,18 @@ async function renderCocauthuchiChart() {
                                 const value = context.raw;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                return `Số tiền: ${formatter.format(value)}
+                                return `Số tiền: ${formatter.format(value)} đ (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error("Lỗi render biểu đồ cơ cấu thu chi:", err.message);
+    }
+}
 
 async function renderTangtruongloinhuanChart() {
     const ctx = document.getElementById('tangtruongloinhuanChart').getContext('2d');
