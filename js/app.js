@@ -1,4 +1,9 @@
-   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfObJiGRrjA749EIM230loYjVbFy7oNsGhr-sXXjdzt3EWjuQSdbWI-WOhyiv-czFXSw/exec";
+//   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfObJiGRrjA749EIM230loYjVbFy7oNsGhr-sXXjdzt3EWjuQSdbWI-WOhyiv-czFXSw/exec";
+
+// Khai báo thông tin dự án Supabase
+const SUPABASE_URL = 'https://lyalwoectghdpjkbqlkx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5YWx3b2VjdGdoZHBqa2JxbGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMjk4MDIsImV4cCI6MjA3OTcwNTgwMn0.B5O419Tk0GQoiO_OxdvZ22USiHMUEmsXvjrECJpTaJk';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function callGAS(functionName, ...args) {
     try {
@@ -189,7 +194,20 @@ function performTraCuu() {
         alert("Vui lòng nhập mã học viên để tra cứu!");
         return;
     }
+   
+   // Lấy dữ liệu từ Supabase
+    const { data, error } = await supabase
+        .from('tbl_hv') // Tên bảng trên Supabase
+        .select('*')       // Lấy tất cả các cột
+        .eq('mahv', studentId) // Điều kiện: mã học sinh bằng studentId
+        .single();         // Chỉ lấy 1 kết quả duy nhất
 
+    if (error) {
+        console.error("Lỗi lấy dữ liệu:", error.message);
+        alert("Không tìm thấy học viên hoặc lỗi hệ thống.");
+        return;
+    }
+   
     // 2. Ẩn Modal Đăng nhập (Phải khớp ID trong HTML)
     hideLoginModal();
 
