@@ -88,76 +88,23 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function initApp() {
-    try {
+     try {
         document.getElementById('login-modal').style.display = 'none';
        
         // 1. Kiểm tra session Nhân viên
-       const now = new Date().getTime();
-       const userSession = JSON.parse(localStorage.getItem('userLogin'));
-       if (userSession && now < userSession.expiry) {
-           document.getElementById('login-modal').style.display = 'none';
-           console.log("Chào mừng nhân viên trở lại:", userSession.user);
-           // Gọi hàm load dữ liệu nhân viên tại đây
-                const result = await callGAS('getAllData', currentSessionId );
-           if (!result.success) {
-                localStorage.removeItem('currentSessionId');
-            currentSessionId = null;
-            showLoginModal();
-            return;
-           }
-               currentUser = result.user;
-        staff = result.staff;
-        statuses = result.statuses;
-        sources = result.sources;
-        customers = result.customers;
-      invoiceData = result.invoices;
-        window.allHistoryData = result.history || [];
-        window.reminders = result.reminders || [];
-        renderReminders();
-        updateReminderTabBadge();
-
-        // -----------------------------------------
-
-        showUserInfo();
-        renderStatusTabs();
-        setupPagination();
-        filterCustomers();
-        populateDropdowns();
-        renderSettingsContent();
-        setupCustomDateFilter();
-
-        // Khởi tạo bộ lọc ngày cho history (mặc định hôm nay)
-        const historyDateInput = document.getElementById('history-date-filter');
-        if (historyDateInput) {
-             historyDateInput.value = new Date().toISOString().split('T')[0];
-        }
-
-        const reportsTab = document.getElementById('reports');
-        if (reportsTab && reportsTab.classList.contains('active')) {
-            renderReports();
-        }
-
-        // --- SỬA LỖI TẠI ĐÂY: Thêm đoạn kiểm tra Tab Lịch sử ---
-        // Nếu tab Lịch sử đang active thì tải lại dữ liệu ngay lập tức
-        const historyTabContent = document.getElementById('history');
-        if (historyTabContent && historyTabContent.classList.contains('active')) {
-             loadHistoryLogs();
-        }
-        // --------------------------------------------------------
-           return; 
-       }
-      else{
-            localStorage.removeItem('currentSessionId');
-            currentSessionId = null;
-            showLoginModal();
-            return;
-        }
+    const userSession = JSON.parse(localStorage.getItem('userLogin'));
+    if (userSession && now < userSession.expiry) {
+        document.getElementById('login-modal').style.display = 'none';
+        console.log("Chào mừng nhân viên trở lại:", userSession.user);
+        // Gọi hàm load dữ liệu nhân viên tại đây
+        return; 
+    }
+       
 
 // THAY THẾ google.script.run:
-       /* 
         const result = await callGAS('getAllData', currentSessionId );
 
-      if (!result.success) {
+        if (!result.success) {
             localStorage.removeItem('currentSessionId');
             currentSessionId = null;
             showLoginModal();
@@ -203,14 +150,15 @@ async function initApp() {
              loadHistoryLogs();
         }
         // --------------------------------------------------------
- */
+
     } catch (error) {
         console.error('Lỗi khởi tạo:', error);
-        localStorage.removeItem('');
+        localStorage.removeItem('currentSessionId');
         currentSessionId = null;
         showLoginModal();
     }
 }
+
 // Chuyển đổi mode trong Login Modal
 function toggleLoginMode(mode) {
     const loginForm = document.getElementById('login-form');
