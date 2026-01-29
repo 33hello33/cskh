@@ -1701,53 +1701,69 @@ function switchTab(tabName) {
 
 
 // Render top customers
-function renderTopCustomersByRevenue() {
-    // 1. Tạo Map để cộng dồn doanh thu cho từng khách hàng từ invoiceData
-    const revenueByCustomer = {};
-
-    if (Array.isArray(invoiceData)) {
-        invoiceData.forEach(inv => {
-            // Kiểm tra ngày lập hóa đơn có nằm trong khoảng thời gian lọc hay không
-            if (inv.ngaylap && isDateInRange(inv.ngaylap, 'closed')) {
-                const customerId = inv.id; // mahv
-                
-                // Làm sạch dữ liệu số tiền conno (xóa dấu chấm, đơn vị đ...)
-                const amount = parseInt(inv.conno.toString().replace(/[^\d]/g, '')) || 0;
-
-                if (amount > 0) {
-                    revenueByCustomer[customerId] = (revenueByCustomer[customerId] || 0) + amount;
-                }
-            }
-        });
-    }
-
-    // 2. Chuyển đổi dữ liệu Map thành mảng để hiển thị Top 10
-    const topRevenueData = Object.keys(revenueByCustomer).map(id => {
-        // Tìm thông tin tên khách hàng từ danh sách customers hiện tại
-        const customerInfo = customers.find(c => String(c.id) === String(id));
-        return {
-            id: id,
-            name: customerInfo ? customerInfo.name : 'Không xác định',
-            revenue: revenueByCustomer[id]
-        };
-    })
-    .sort((a, b) => b.revenue - a.revenue) // Sắp xếp giảm dần
-    .slice(0, 10); // Lấy top 10
-
-    // 3. Render HTML
-    const html = topRevenueData.map((item, index) => `
-        <div class="top-item">
-            <div class="top-item-info">
-                <div class="top-item-rank">${index + 1}</div>
-                <span>KH${item.id} - ${item.name}</span>
-            </div>
-            <span class="top-item-count">${new Intl.NumberFormat('vi-VN').format(item.revenue)}</span>
-        </div>
-    `).join('');
-
+async function renderTopCustomersByRevenue() {
     const container = document.getElementById('tongcongnotrongthangChart');
-    if (container) {
-        container.innerHTML = html || '<p class="text-muted text-center">Chưa có dữ liệu doanh thu trong kỳ</p>';
+    if (!container) return;
+
+    // Hiển thị trạng thái đang tải
+    container.innerHTML = '<p class="text-center">Đang tải dữ liệu...</p>';
+
+    try {
+        // 1. Lấy dữ liệu từ Supabase (Lọc daxoa và nợ > 0)
+        const { data, error } = await supabaseClient
+            .from('tbl_hd')
+            .select('mahd, mahv, tenhv, tenlop, conno, ngaylap')
+            .or('daxoa.neq."Đã Xóa",daxoa.is.null') // Xử lý cả trường hợp null như đã thảo luận
+            .gt('conno', 0); // Chỉ lấy những người còn nợ
+
+        if (error) throw error;
+
+        // 2. Hàm parse tiền nợ
+        const parseMoney = (val) => {
+            if (!val) return 0;
+            return parseInt(val.toString().replace(/[^\d]/g, '')) || 0;
+        };
+
+        // 3. Lọc theo khoảng thời gian và xử lý dữ liệu
+        // Lưu ý: isDateInRange là hàm của bạn, đảm bảo nó hoạt động với ngaylap
+        const debtData = data
+            .filter(inv => inv.ngaylap && isDateInRange(inv.ngaylap, 'closed'))
+            .map(inv => ({
+                mahd: inv.mahd,
+                mahv: inv.mahv,
+                tenhv: inv.tenhv || 'Không xác định',
+                tenlop: inv.tenlop ? inv.tenlop.trim().replace(/[\r\n]+/g, '') : 'Vãng lai',
+                amount: parseMoney(inv.conno)
+            }))
+            .sort((a, b) => b.amount - a.amount) // Sắp xếp nợ nhiều nhất lên đầu
+            .slice(0, 10); // Lấy Top 10
+
+        // 4. Render HTML
+        if (debtData.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">Không có học viên nợ trong kỳ này</p>';
+            return;
+        }
+
+        const html = debtData.map((item, index) => `
+            <div class="top-item" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee;">
+                <div class="top-item-info" style="display: flex; align-items: center; gap: 10px;">
+                    <div class="top-item-rank" style="font-weight: bold; color: #ef4444;">#${index + 1}</div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-weight: 600;">${item.tenhv} <small class="text-muted">(${item.mahv})</small></span>
+                        <small style="color: #666;">Mã HĐ: ${item.mahd} | Lớp: ${item.tenlop}</small>
+                    </div>
+                </div>
+                <div class="top-item-count" style="font-weight: bold; color: #b91c1c;">
+                    ${new Intl.NumberFormat('vi-VN').format(item.amount)} đ
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = html;
+
+    } catch (err) {
+        console.error("Lỗi render danh sách nợ:", err.message);
+        container.innerHTML = '<p class="text-danger text-center">Lỗi tải dữ liệu nợ</p>';
     }
 }
 
