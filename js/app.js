@@ -5199,7 +5199,7 @@ window.cancelOrderInfo = cancelOrderInfo;
 window.saveOrderInfo = saveOrderInfo;
 window.updateStatusDropdownColor = updateStatusDropdownColor;
 
-window.renderTopCustomersByRevenue = renderTopCustomersByRevenue;
+window.renderAllDebt = renderAllDebt;
 window.renderSourceChart = renderTangtruonghocvienChart;
 window.renderSisotunglopChart = renderSisotunglopChart;
 window.renderStaffRevenueChart = renderStaffRevenueChart;
