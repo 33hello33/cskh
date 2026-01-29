@@ -951,6 +951,7 @@ async function renderTangtruongloinhuanChart() {
 
     const monthlyProfit = {};
     const currentDate = new Date();
+    // Lấy dữ liệu 12 tháng gần nhất
     const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 11, 1);
     const startDateISO = startDate.toISOString();
 
@@ -962,54 +963,41 @@ async function renderTangtruongloinhuanChart() {
     }
 
     try {
-        // 2. Lấy dữ liệu từ 4 bảng cùng lúc
+        // 2. Lấy dữ liệu từ các bảng
         const [resHd, resBill, resChi, resThu, resNhap, resLuong] = await Promise.all([
-            supabaseClient.from('tbl_hd')
-            .select('ngaylap, dadong')
-            .neq('daxoa', 'Đã Xóa')
-            .gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_billhanghoa')
-            .select('ngaylap, dadong')
-            .neq('daxoa', 'Đã Xóa')
-            .gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_phieuchi')
-            .select('ngaylap, chiphi')
-            .neq('daxoa', 'Đã Xóa')
-            .eq('loaiphieu', 'Chi')
-            .gte('ngaylap', startDateISO),
-             supabaseClient.from('tbl_phieuchi')
-            .select('ngaylap, chiphi')
-            .neq('daxoa', 'Đã Xóa')
-            .eq('loaiphieu', 'Thu')
-            .gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_nhapkho')
-            .select('ngaynhap, thanhtien')
-            .neq('daxoa', 'Đã Xóa')
-            .gte('ngaynhap', startDateISO),
-            supabaseClient.from('tbl_phieuchamcong')
-            .select('tongcong')
-            .neq('daxoa', 'Đã Xóa')
-            .gte('ngaylap', fromDate)
-            .lte('ngaylap', toDate)
+            supabaseClient.from('tbl_hd').select('ngaylap, dadong').neq('daxoa', 'Đã Xóa').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_billhanghoa').select('ngaylap, dadong').neq('daxoa', 'Đã Xóa').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_phieuchi').select('ngaylap, chiphi').neq('daxoa', 'Đã Xóa').eq('loaiphieu', 'Chi').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_phieuchi').select('ngaylap, chiphi').neq('daxoa', 'Đã Xóa').eq('loaiphieu', 'Thu').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_nhapkho').select('ngaynhap, thanhtien').neq('daxoa', 'Đã Xóa').gte('ngaynhap', startDateISO),
+            supabaseClient.from('tbl_phieuchamcong').select('ngaylap, tongcong').neq('daxoa', 'Đã Xóa').gte('ngaylap', startDateISO)
         ]);
 
-        // Hàm tiện ích để làm sạch và chuyển đổi số tiền
         const parseMoney = (val) => {
             if (!val) return 0;
             return parseFloat(val.toString().replace(/[^\d]/g, '')) || 0;
         };
 
-        // 3. Xử lý cộng Doanh thu (Hóa đơn & Bán hàng & Phiếu Thu)
-        [...resHd.data, ...resBill.data, ...resThu.data || []].forEach(item => {
+        // 3. Xử lý cộng Doanh thu (Hóa đơn & Bán hàng dùng cột 'dadong', Phiếu Thu dùng cột 'chiphi')
+        // Xử lý Hóa đơn & Bill
+        [...(resHd.data || []), ...(resBill.data || [])].forEach(item => {
             const date = new Date(item.ngaylap);
             const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
             if (monthlyProfit.hasOwnProperty(key)) {
                 monthlyProfit[key] += parseMoney(item.dadong);
             }
         });
+        // Xử lý Phiếu Thu
+        (resThu.data || []).forEach(item => {
+            const date = new Date(item.ngaylap);
+            const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            if (monthlyProfit.hasOwnProperty(key)) {
+                monthlyProfit[key] += parseMoney(item.chiphi);
+            }
+        });
 
-        // 4. Xử lý trừ Chi phí (Phiếu chi + Phiếu Lương )
-        (resChi.data, resLuong.data,  || []).forEach(item => {
+        // 4. Xử lý trừ Chi phí (Phiếu chi dùng 'chiphi', Lương dùng 'tongcong')
+        (resChi.data || []).forEach(item => {
             const date = new Date(item.ngaylap);
             const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
             if (monthlyProfit.hasOwnProperty(key)) {
@@ -1017,7 +1005,15 @@ async function renderTangtruongloinhuanChart() {
             }
         });
 
-        // 5. Xử lý trừ Chi phí (Nhập kho - dùng ngaynhap)
+        (resLuong.data || []).forEach(item => {
+            const date = new Date(item.ngaylap);
+            const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            if (monthlyProfit.hasOwnProperty(key)) {
+                monthlyProfit[key] -= parseMoney(item.tongcong);
+            }
+        });
+
+        // 5. Xử lý trừ Chi phí Nhập kho (dùng 'ngaynhap' và 'thanhtien')
         (resNhap.data || []).forEach(item => {
             const date = new Date(item.ngaynhap);
             const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -1030,18 +1026,16 @@ async function renderTangtruongloinhuanChart() {
         const monthLabels = months.map(m => `${m.split('-')[1]}/${m.split('-')[0]}`);
         const profitValues = Object.values(monthlyProfit);
 
-        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
-
         // 6. Vẽ biểu đồ
         window.tangtruongloinhuanChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: monthLabels,
                 datasets: [{
-                    label: 'Lợi nhuận ròng (VNĐ) (Hóa Đơn + Bill Bán Hàng + Phiếu Thu - Phiếu Chi - Phiếu Lương - Nhập Kho )',
+                    label: 'Lợi nhuận ròng (VNĐ)',
                     data: profitValues,
-                    borderColor: primaryColor,
-                    backgroundColor: typeof hexToRgba === 'function' ? hexToRgba(primaryColor, 0.1) : primaryColor + '1A',
+                    borderColor: '#4A6FDC',
+                    backgroundColor: 'rgba(74, 111, 220, 0.1)',
                     tension: 0.4,
                     fill: true,
                     pointRadius: 5,
@@ -1051,21 +1045,11 @@ async function renderTangtruongloinhuanChart() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => `Lợi nhuận: ${new Intl.NumberFormat('vi-VN').format(context.raw)} đ`
-                        }
-                    }
-                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: (value) => {
-                                if (Math.abs(value) >= 1000000) return (value / 1000000).toFixed(1) + 'M';
-                                return new Intl.NumberFormat('vi-VN').format(value);
-                            }
+                            callback: (value) => new Intl.NumberFormat('vi-VN').format(value) + ' đ'
                         }
                     }
                 }
