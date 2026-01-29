@@ -128,15 +128,17 @@ async function initApp() {
         renderSettingsContent();
         //setupCustomDateFilter();
 
-        // Khởi tạo bộ lọc ngày cho history (mặc định hôm nay)
-        const historyDateInput = document.getElementById('history-date-filter');
-        if (historyDateInput) {
-             historyDateInput.value = new Date().toISOString().split('T')[0];
-        }
 
         const reportsTab = document.getElementById('reports');
         if (reportsTab && reportsTab.classList.contains('active')) {
             renderReports();
+        }
+
+       /*
+        // Khởi tạo bộ lọc ngày cho history (mặc định hôm nay)
+        const historyDateInput = document.getElementById('history-date-filter');
+        if (historyDateInput) {
+             historyDateInput.value = new Date().toISOString().split('T')[0];
         }
 
         // --- SỬA LỖI TẠI ĐÂY: Thêm đoạn kiểm tra Tab Lịch sử ---
@@ -145,6 +147,7 @@ async function initApp() {
         if (historyTabContent && historyTabContent.classList.contains('active')) {
              loadHistoryLogs();
         }
+        */
         // --------------------------------------------------------
 
     } catch (error) {
