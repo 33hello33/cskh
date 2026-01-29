@@ -680,7 +680,7 @@ function renderReports() {
     renderOverviewCards();
     renderCocauthuchiChart();
     renderTangtruongdoanhthuChart();
-    renderTangtruongloinhuanChart();
+    render();
 //    renderTopCustomersByRevenue();
     renderCocaudoanhthulopChart();
     renderThongkenolopChart();
@@ -859,7 +859,7 @@ async function renderCocauthuchiChart() {
             .select('tongcong')
             .neq('daxoa', 'Đã Xóa')
             .gte('ngaylap', fromDate)
-            .lte('ngaylap', toDate),
+            .lte('ngaylap', toDate)
         ]);
 
         if (resHd.error || resBill.error || resChi.error || resThu.error ||resNhap.error) {
@@ -963,11 +963,34 @@ async function renderTangtruongloinhuanChart() {
 
     try {
         // 2. Lấy dữ liệu từ 4 bảng cùng lúc
-        const [resHd, resBill, resChi, resNhap] = await Promise.all([
-            supabaseClient.from('tbl_hd').select('ngaylap, dadong').gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_billhanghoa').select('ngaylap, dadong').gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_phieuchi').select('ngaylap, chiphi').gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_nhapkho').select('ngaynhap, thanhtien').gte('ngaynhap', startDateISO)
+        const [resHd, resBill, resChi, resThu, resNhap, resLuong] = await Promise.all([
+            supabaseClient.from('tbl_hd')
+            .select('ngaylap, dadong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_billhanghoa')
+            .select('ngaylap, dadong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_phieuchi')
+            .select('ngaylap, chiphi')
+            .neq('daxoa', 'Đã Xóa')
+            .eq('loaiphieu', 'Chi')
+            .gte('ngaylap', startDateISO),
+             supabaseClient.from('tbl_phieuchi')
+            .select('ngaylap, chiphi')
+            .neq('daxoa', 'Đã Xóa')
+            .eq('loaiphieu', 'Thu')
+            .gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_nhapkho')
+            .select('ngaynhap, thanhtien')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaynhap', startDateISO),
+            supabaseClient.from('tbl_phieuchamcong')
+            .select('tongcong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', fromDate)
+            .lte('ngaylap', toDate)
         ]);
 
         // Hàm tiện ích để làm sạch và chuyển đổi số tiền
@@ -976,8 +999,8 @@ async function renderTangtruongloinhuanChart() {
             return parseFloat(val.toString().replace(/[^\d]/g, '')) || 0;
         };
 
-        // 3. Xử lý cộng Doanh thu (Hóa đơn & Bán hàng)
-        [...resHd.data || [], ...resBill.data || []].forEach(item => {
+        // 3. Xử lý cộng Doanh thu (Hóa đơn & Bán hàng & Phiếu Thu)
+        [...resHd.data, ...resBill.data, ...resThu.data || []].forEach(item => {
             const date = new Date(item.ngaylap);
             const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
             if (monthlyProfit.hasOwnProperty(key)) {
@@ -985,8 +1008,8 @@ async function renderTangtruongloinhuanChart() {
             }
         });
 
-        // 4. Xử lý trừ Chi phí (Phiếu chi)
-        (resChi.data || []).forEach(item => {
+        // 4. Xử lý trừ Chi phí (Phiếu chi + Phiếu Lương )
+        (resChi.data, resLuong.data,  || []).forEach(item => {
             const date = new Date(item.ngaylap);
             const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
             if (monthlyProfit.hasOwnProperty(key)) {
@@ -1015,7 +1038,7 @@ async function renderTangtruongloinhuanChart() {
             data: {
                 labels: monthLabels,
                 datasets: [{
-                    label: 'Lợi nhuận ròng (VNĐ)',
+                    label: 'Lợi nhuận ròng (VNĐ) (Hóa Đơn + Bill Bán Hàng + Phiếu Thu - Phiếu Chi - Phiếu Lương - Nhập Kho )',
                     data: profitValues,
                     borderColor: primaryColor,
                     backgroundColor: typeof hexToRgba === 'function' ? hexToRgba(primaryColor, 0.1) : primaryColor + '1A',
@@ -1077,8 +1100,14 @@ async function renderTangtruongdoanhthuChart() {
     try {
         // 2. Gọi song song dữ liệu từ 2 bảng để tăng tốc độ
         const [resHd, resBill] = await Promise.all([
-            supabaseClient.from('tbl_hd').select('ngaylap, dadong').gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_billhanghoa').select('ngaylap, dadong').gte('ngaylap', startDateISO)
+            supabaseClient.from('tbl_hd')
+            .select('ngaylap, dadong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_billhanghoa')
+            .select('ngaylap, dadong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', startDateISO)
         ]);
 
         if (resHd.error) throw resHd.error;
