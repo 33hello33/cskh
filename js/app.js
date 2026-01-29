@@ -489,7 +489,7 @@ async function performLogin() {
             name: user.tennv,
             position: user.role,
             username: user.username,
-            isManager: (datauser.role === "Quản lý" || datauser.role === "Nhân Viên VP")
+            isManager: (user.role === "Quản lý" || user.role === "Nhân Viên VP")
         };
         currentSessionId = `session_${user.manv}_${Date.now()}`;
         
