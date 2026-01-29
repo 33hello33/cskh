@@ -2480,7 +2480,7 @@ window.saveCustomer = async function() {
         showButtonLoading('#customer-modal .d-flex .btn-success', 'Đang lưu...');
        const result = customerId 
             ? await updateCustomer(parseInt(customerId), customerData) 
-            : await caddCustomer(customerData);
+            : await addCustomer(customerData);
 
         if (result.success) {
             showNotification('Thành công!');
