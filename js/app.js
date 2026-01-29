@@ -701,19 +701,26 @@ async function renderOverviewCards() {
             .select('*', { count: 'exact', head: true })
             .eq('trangthai', 'Đang Học');
 
+        // Hàm phụ để convert text "1,000,000" thành number 1000000
+        const parseCurrency = (text) => {
+            if (!text) return 0;
+            // Loại bỏ tất cả các ký tự không phải là số (ví dụ dấu phẩy, dấu chấm, khoảng trắng)
+            return parseFloat(text.toString().replace(/,/g, '')) || 0;
+        };
+        
         // 2. Lấy doanh thu từ tbl_hd và tbl_billHangHoa
-        // Chúng ta lấy tổng cột 'dadong' từ cả 2 bảng
+        // Chúng ta lấy dữ liệu từ 2 bảng
         const [resHd, resBill] = await Promise.all([
             supabaseClient.from('tbl_hd').select('dadong'),
             supabaseClient.from('tbl_billHangHoa').select('dadong')
         ]);
-
-        const revenueHd = resHd.data?.reduce((sum, item) => sum + (item.dadong || 0), 0) || 0;
-        const revenueBill = resBill.data?.reduce((sum, item) => sum + (item.dadong || 0), 0) || 0;
+        
+        const revenueHd = resHd.data?.reduce((sum, item) => sum + parseCurrency(item.dadong), 0) || 0;
+        const revenueBill = resBill.data?.reduce((sum, item) => sum + parseCurrency(item.dadong), 0) || 0;
         
         const totalRevenue = revenueHd + revenueBill;
         const totalOrders = (resHd.data?.length || 0) + (resBill.data?.length || 0);
-
+                
         // 3. Lấy số học viên mới trong tháng hiện tại
         const { count: todayCustomers, error: err2 } = await supabaseClient
             .from('tbl_hv')
