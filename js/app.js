@@ -1182,7 +1182,8 @@ async function renderCocaudoanhthulopChart() {
         // 2. Lấy dữ liệu từ Supabase (Lấy cột tenlop và dadong từ bảng tbl_hd)
         const { data: invoiceData, error } = await supabaseClient
             .from('tbl_hd')
-            .select('tenlop, dadong');
+            .select('tenlop, dadong')
+            .neq('daxoa', 'Đã Xóa');
 
         if (error) throw error;
 
@@ -1394,6 +1395,7 @@ async function renderTangtruonghocvienChart() {
         const { data, error } = await supabaseClient
             .from('tbl_hv')
             .select('ngaynhaphoc')
+            .neq('trangthai', 'Đã Nghỉ')
             .gte('ngaynhaphoc', startDateISO); // Lọc các bản ghi >= startDate
 
         if (error) throw error;
