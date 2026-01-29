@@ -677,7 +677,7 @@ function renderReports() {
         initializeReportDateRange();
     }
 
-//    renderOverviewCards();
+    renderOverviewCards();
     renderCocauthuchiChart();
     renderTangtruongdoanhthuChart();
     renderTangtruongloinhuanChart();
@@ -690,50 +690,56 @@ function renderReports() {
 }
 
 // Render overview cards
-function renderOverviewCards() {
-    const filteredCustomers = getFilteredCustomers('created');
-    const totalCustomers = filteredCustomers.length;
+async function renderOverviewCards() {
+    const supabase = createClient(); // Giả định bạn đã khởi tạo supabase client
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    // UPDATED: Tính tổng doanh thu từ orders array trong khoảng thời gian
-    let totalRevenue = 0;
-    let closedCount = 0;
+    try {
+        // 1. Lấy tổng số học viên đang học
+        const { count: totalCustomers, error: err1 } = await supabaseClient
+            .from('tbl_hv')
+            .select('*', { count: 'exact', head: true })
+            .eq('trangthai', 'Đang Học');
 
-    filteredCustomers.forEach(customer => {
-        if (customer.orders && customer.orders.length > 0) {
-            customer.orders.forEach(order => {
-                if (order.closedDate && isDateInRange(order.closedDate, 'closed')) {
-                    totalRevenue += order.orderValue || 0;
-                    closedCount++;
-                }
-            });
-        }
-    });
+        // 2. Lấy doanh thu từ tbl_hd và tbl_billHangHoa
+        // Chúng ta lấy tổng cột 'dadong' từ cả 2 bảng
+        const [resHd, resBill] = await Promise.all([
+            supabaseClient.from('tbl_hd').select('dadong'),
+            supabaseClient.from('tbl_billHangHoa').select('dadong')
+        ]);
 
-    const todayCustomers = filteredCustomers.filter(customer => isThisMonth(customer.createdDate)).length;
+        const revenueHd = resHd.data?.reduce((sum, item) => sum + (item.dadong || 0), 0) || 0;
+        const revenueBill = resBill.data?.reduce((sum, item) => sum + (item.dadong || 0), 0) || 0;
+        
+        const totalRevenue = revenueHd + revenueBill;
+        const totalOrders = (resHd.data?.length || 0) + (resBill.data?.length || 0);
 
-    // Tìm nhân viên chăm sóc nhiều nhất trong khoảng thời gian
-    const staffCareCount = {};
-    filteredCustomers.forEach(customer => {
-        if (customer.careHistory) {
-            customer.careHistory.forEach(care => {
-                if (care.staff && isDateInRange(care.contactDate)) {
-                    staffCareCount[care.staff] = (staffCareCount[care.staff] || 0) + 1;
-                }
-            });
-        }
-    });
+        // 3. Lấy số học viên mới trong tháng hiện tại
+        const { count: todayCustomers, error: err2 } = await supabaseClient
+            .from('tbl_hv')
+            .select('*', { count: 'exact', head: true })
+            .gte('ngaynhaphoc', firstDayOfMonth);
 
-    const topStaff = Object.keys(staffCareCount).reduce((a, b) => 
-        staffCareCount[a] > staffCareCount[b] ? a : b, '-');
+        // --- Hiển thị lên UI ---
+        
+        // Tổng khách hàng (Học viên đang học)
+        document.getElementById('total-customers-count').textContent = totalCustomers || 0;
 
-    document.getElementById('total-customers-count').textContent = totalCustomers;
+        // Doanh thu và Số đơn hàng
+        document.getElementById('total-care-count').textContent = 
+            `${new Intl.NumberFormat('vi-VN').format(totalRevenue)} VNĐ (${totalOrders} đơn)`;
 
-    // UPDATED: Hiển thị doanh thu và số đơn hàng
-    document.getElementById('total-care-count').textContent = 
-        `${new Intl.NumberFormat('vi-VN').format(totalRevenue)} (${closedCount} đơn)`;
+        // Học viên mới trong tháng
+        document.getElementById('today-customers-count').textContent = todayCustomers || 0;
 
-    document.getElementById('today-customers-count').textContent = todayCustomers;
-    document.getElementById('top-staff-name').textContent = topStaff;
+        // Lưu ý: Phần 'top-staff-name' cần thêm logic truy vấn bảng chăm sóc 
+        // nếu bạn muốn giữ lại tính năng nhân viên xuất sắc.
+        document.getElementById('top-staff-name').textContent = "Cập nhật sau";
+
+    } catch (error) {
+        console.error("Lỗi khi tải dữ liệu:", error);
+    }
 }
 
 /**
