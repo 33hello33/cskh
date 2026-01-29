@@ -120,7 +120,7 @@ async function initApp() {
 
         // -----------------------------------------
 */
-        statuses = getStatusesFromSupabase();
+        statuses = await getStatusesFromSupabase();
         showUserInfo();
         renderStatusTabs();
         setupPagination();
