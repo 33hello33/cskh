@@ -680,7 +680,7 @@ function renderReports() {
     renderOverviewCards();
     renderCocauthuchiChart();
     renderTangtruongdoanhthuChart();
-    render();
+    renderTangtruongloinhuanChart();
 //    renderTopCustomersByRevenue();
     renderCocaudoanhthulopChart();
     renderThongkenolopChart();
