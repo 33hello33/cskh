@@ -967,8 +967,8 @@ async function renderTangtruongloinhuanChart() {
         const [resHd, resBill, resChi, resThu, resNhap, resLuong] = await Promise.all([
             supabaseClient.from('tbl_hd').select('ngaylap, dadong').neq('daxoa', 'Đã Xóa').gte('ngaylap', startDateISO),
             supabaseClient.from('tbl_billhanghoa').select('ngaylap, dadong').neq('daxoa', 'Đã Xóa').gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_phieuchi').select('ngaylap, chiphi').neq('daxoa', 'Đã Xóa').eq('loaiphieu', 'Chi').gte('ngaylap', startDateISO),
-            supabaseClient.from('tbl_phieuchi').select('ngaylap, chiphi').neq('daxoa', 'Đã Xóa').eq('loaiphieu', 'Thu').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_phieuchi').select('ngaylap, chiphi').or('daxoa.neq."Đã Xóa",daxoa.is.null').eq('loaiphieu', 'Chi').gte('ngaylap', startDateISO),
+            supabaseClient.from('tbl_phieuchi').select('ngaylap, chiphi').or('daxoa.neq."Đã Xóa",daxoa.is.null').eq('loaiphieu', 'Thu').gte('ngaylap', startDateISO),
             supabaseClient.from('tbl_nhapkho').select('ngaynhap, thanhtien').neq('daxoa', 'Đã Xóa').gte('ngaynhap', startDateISO),
             supabaseClient.from('tbl_phieuchamcong').select('ngaylap, tongcong').neq('daxoa', 'Đã Xóa').gte('ngaylap', startDateISO)
         ]);
@@ -1032,7 +1032,7 @@ async function renderTangtruongloinhuanChart() {
             data: {
                 labels: monthLabels,
                 datasets: [{
-                    label: 'Lợi nhuận ròng (VNĐ)',
+                    label: 'Lợi nhuận ròng (VNĐ) (Học phí + Bán Hàng + Phiếu Thu - Phiếu Chi - Nhập Kho - Lương NV',
                     data: profitValues,
                     borderColor: '#4A6FDC',
                     backgroundColor: 'rgba(74, 111, 220, 0.1)',
