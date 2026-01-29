@@ -120,6 +120,7 @@ async function initApp() {
 
         // -----------------------------------------
 */
+        statuses = getStatusesFromSupabase();
         showUserInfo();
         renderStatusTabs();
         setupPagination();
@@ -156,6 +157,27 @@ async function initApp() {
         currentSessionId = null;
         showLoginModal();
     }
+}
+
+async function getStatusesFromSupabase() {
+    // Giả định bạn đã khởi tạo supabaseClient trước đó
+    const { data, error } = await supabaseClient
+        .from('tbl_status')
+        .select('id, tentrangthai, mausac');
+
+    if (error) {
+        console.error('Lỗi khi lấy dữ liệu status:', error.message);
+        return [];
+    }
+
+    // Chuyển đổi dữ liệu từ database sang định dạng mảng statuses cũ của bạn
+    const statuses = data.map(item => ({
+        id: item.id,
+        name: item.tentrangthai, // Đổi tentrangthai -> name
+        color: item.mausac      // Đổi mausac -> color
+    }));
+
+    return statuses;
 }
 
 // Chuyển đổi mode trong Login Modal
