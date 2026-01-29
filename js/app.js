@@ -681,7 +681,7 @@ function renderReports() {
     renderCocauthuchiChart();
     renderTangtruongdoanhthuChart();
     renderTangtruongloinhuanChart();
-    renderTopCustomersByRevenue();
+    renderAllDebt();
     renderCocaudoanhthulopChart();
     renderThongkenolopChart();
     renderTangtruonghocvienChart();
@@ -1701,59 +1701,70 @@ function switchTab(tabName) {
 
 
 // Render top customers
-async function renderTopCustomersByRevenue() {
+async function renderAllDebt() {
     const container = document.getElementById('tongcongnotrongthangChart');
     if (!container) return;
 
-    // Hiển thị trạng thái đang tải
     container.innerHTML = '<p class="text-center">Đang tải dữ liệu...</p>';
 
     try {
-        // 1. Lấy dữ liệu từ Supabase (Lọc daxoa và nợ > 0)
+        // 1. Truy vấn Join: Lấy dữ liệu từ tbl_hd và lấy tenhv từ bảng tbl_hv thông qua mahv
         const { data, error } = await supabaseClient
             .from('tbl_hd')
-            .select('mahd, mahv, tenhv, tenlop, conno, ngaylap')
-            .or('daxoa.neq."Đã Xóa",daxoa.is.null') // Xử lý cả trường hợp null như đã thảo luận
-            .gt('conno', 0); // Chỉ lấy những người còn nợ
+            .select(`
+                mahd, 
+                mahv, 
+                tenlop, 
+                conno, 
+                ngaylap,
+                tbl_hv!inner(tenhv)
+            `)
+            .or('daxoa.neq."Đã Xóa",daxoa.is.null')
+            .gt('conno', 0);
 
         if (error) throw error;
 
-        // 2. Hàm parse tiền nợ
         const parseMoney = (val) => {
             if (!val) return 0;
             return parseInt(val.toString().replace(/[^\d]/g, '')) || 0;
         };
 
-        // 3. Lọc theo khoảng thời gian và xử lý dữ liệu
-        // Lưu ý: isDateInRange là hàm của bạn, đảm bảo nó hoạt động với ngaylap
+        const cleanString = (str) => {
+            if (!str) return '';
+            return str.toString().trim().replace(/[\r\n]+/g, '');
+        };
+
+        // 2. Lọc và xử lý dữ liệu
         const debtData = data
             .filter(inv => inv.ngaylap && isDateInRange(inv.ngaylap, 'closed'))
             .map(inv => ({
                 mahd: inv.mahd,
                 mahv: inv.mahv,
-                tenhv: inv.tenhv || 'Không xác định',
-                tenlop: inv.tenlop ? inv.tenlop.trim().replace(/[\r\n]+/g, '') : 'Vãng lai',
+                // Lấy tenhv từ object lồng nhau của bảng tbl_hv
+                tenhv: cleanString(inv.tbl_hv?.tenhv) || 'Học viên ẩn danh',
+                tenlop: cleanString(inv.tenlop) || 'Chưa xếp lớp',
                 amount: parseMoney(inv.conno)
             }))
-            .sort((a, b) => b.amount - a.amount) // Sắp xếp nợ nhiều nhất lên đầu
-            .slice(0, 10); // Lấy Top 10
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 10);
 
-        // 4. Render HTML
+        // 3. Render HTML
         if (debtData.length === 0) {
             container.innerHTML = '<p class="text-muted text-center">Không có học viên nợ trong kỳ này</p>';
             return;
         }
 
         const html = debtData.map((item, index) => `
-            <div class="top-item" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee;">
-                <div class="top-item-info" style="display: flex; align-items: center; gap: 10px;">
-                    <div class="top-item-rank" style="font-weight: bold; color: #ef4444;">#${index + 1}</div>
+            <div class="top-item" style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0; align-items: center;">
+                <div class="top-item-info" style="display: flex; align-items: center; gap: 12px;">
+                    <div class="top-item-rank" style="font-weight: bold; width: 25px; color: #666;">${index + 1}</div>
                     <div style="display: flex; flex-direction: column;">
-                        <span style="font-weight: 600;">${item.tenhv} <small class="text-muted">(${item.mahv})</small></span>
-                        <small style="color: #666;">Mã HĐ: ${item.mahd} | Lớp: ${item.tenlop}</small>
+                        <span style="font-weight: bold; color: #333;">${item.tenhv}</span>
+                        <small style="color: #888;">Mã HV: ${item.mahv} | Lớp: ${item.tenlop}</small>
+                        <small style="color: #aaa; font-size: 10px;">HĐ: ${item.mahd}</small>
                     </div>
                 </div>
-                <div class="top-item-count" style="font-weight: bold; color: #b91c1c;">
+                <div class="top-item-count" style="font-weight: bold; color: #d32f2f; background: #fff5f5; padding: 4px 8px; border-radius: 4px;">
                     ${new Intl.NumberFormat('vi-VN').format(item.amount)} đ
                 </div>
             </div>
@@ -1763,7 +1774,7 @@ async function renderTopCustomersByRevenue() {
 
     } catch (err) {
         console.error("Lỗi render danh sách nợ:", err.message);
-        container.innerHTML = '<p class="text-danger text-center">Lỗi tải dữ liệu nợ</p>';
+        container.innerHTML = '<p class="text-danger text-center">Lỗi tải dữ liệu nợ từ hệ thống</p>';
     }
 }
 
