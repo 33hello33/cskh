@@ -693,7 +693,15 @@ function renderReports() {
 async function renderOverviewCards() {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
+    
+    // Lấy giá trị từ các ô input
+    const fromDateValue = document.getElementById('report-from-date').value;
+    const toDateValue = document.getElementById('report-to-date').value;
+    
+    // Chuyển đổi sang định dạng timestamp để bao gồm toàn bộ ngày cuối cùng
+    const fromDate = `${fromDateValue}T00:00:00`;
+    const toDate = `${toDateValue}T23:59:59`;
+    
     try {
         // 1. Lấy tổng số học viên đang học
         const { count: totalCustomers, error: err1 } = await supabaseClient
@@ -711,8 +719,17 @@ async function renderOverviewCards() {
         // 2. Lấy doanh thu từ tbl_hd và tbl_billHangHoa
         // Chúng ta lấy dữ liệu từ 2 bảng
         const [resHd, resBill] = await Promise.all([
-            supabaseClient.from('tbl_hd').select('dadong'),
-            supabaseClient.from('tbl_billhanghoa').select('dadong')
+            supabaseClient.from('tbl_hd')
+            .select('dadong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', fromDate)
+            .lte('ngaylap', toDate);
+        
+            supabaseClient.from('tbl_billhanghoa')
+            .select('dadong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', fromDate)
+            .lte('ngaylap', toDate);
         ]);
         
         const revenueHd = resHd.data?.reduce((sum, item) => sum + parseCurrency(item.dadong), 0) || 0;
