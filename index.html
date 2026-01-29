@@ -37,10 +37,17 @@
 
         <!-- Navigation -->
         <div class="nav-tabs">
-         <!--
             <div class="nav-tab active" data-tab="customers">
-             <i class="fas fa-users"></i> Học viên
+             <i class="fas fa-users"></i> Chăm sóc khách hàng
             </div>
+            <div class="nav-tab" data-tab="reports">
+                <i class="fas fa-chart-bar"></i> Báo cáo
+            </div>
+            <div class="nav-tab" data-tab="reminders" style="position: relative;">
+                <i class="fas fa-tasks"></i> Nhắc việc
+                <span id="reminder-tab-badge" class="tab-notification-badge" style="display: none;">0</span>
+            </div>
+                  <!--
               <div class="nav-tab" data-tab="history">
                 <i class="fas fa-history"></i> Lịch sử
             </div>
@@ -48,22 +55,13 @@
                 <i class="fas fa-cog"></i> Cài đặt
             </div>
             -->
-            <div class="nav-tab" data-tab="reports">
-                <i class="fas fa-chart-bar"></i> Báo cáo
-            </div>
-     
-            <div class="nav-tab" data-tab="reminders" style="position: relative;">
-                <i class="fas fa-tasks"></i> Nhắc việc
-                <span id="reminder-tab-badge" class="tab-notification-badge" style="display: none;">0</span>
-            </div>
-          
+
         </div>
 
         <!-- Main Content -->
         <div class="glass-card">
             <!-- Customers Section -->
-
-    <!--         
+     
             <div id="customers" class="content-section active">
                 
                 <div id="status-tabs-container" class="status-tabs-wrapper">
@@ -114,9 +112,8 @@
                         <i class="fas fa-plus"></i> Thêm
                     </button>
                 </div>
--->
                 <!-- Table View - GIỮ NGUYÊN -->
-        <!--         <div id="table-view" class="table-container" style="display: block;">
+                   <div id="table-view" class="table-container" style="display: block;">
                   <table class="data-table">
                       <thead>
                         <tr>
@@ -174,9 +171,9 @@
                       </tbody>
                   </table>
                 </div>
--->
+                
                 <!-- Pagination - GIỮ NGUYÊN -->
-   <!--              <div class="pagination-container">
+                    <div class="pagination-container">
                     <div class="pagination-info">
                         <span>Hiển thị <span id="showing-from">1</span>-<span id="showing-to">10</span> trong tổng <span id="total-customers">0</span> học viên</span>
                     </div>
@@ -205,8 +202,6 @@
                     </div>
                 </div>
             </div>
- -->
-
             
             <!-- Reports Section -->
             <div id="reports" class="content-section">
@@ -380,6 +375,7 @@
                 </div>
             </div>
 
+ <!--     
             <div id="history" class="content-section">
                 <div class="filter-controls" style="margin-bottom: 15px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -445,8 +441,9 @@
                     </div>
                 </div>
             </div>
-
+-->
             <!-- Settings Section -->
+<!-- 
             <div id="settings" class="content-section">
                 <div class="settings-grid">
                     <!-- Staff Management -->
@@ -459,7 +456,7 @@
                             <i class="fas fa-plus"></i> Thêm nhân viên
                         </button>
                     </div>
-
+-->
                     <!-- Status Management -->
                     <div class="settings-card">
                         <h3><i class="fas fa-chart-pie"></i> Quản lý trạng thái</h3>
