@@ -225,7 +225,7 @@ async function getStaffFromSupabase() {
         manager: ''
     }));
 
-    return statuses;
+    return staff;
 }
 
 
