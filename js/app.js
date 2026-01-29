@@ -1423,7 +1423,7 @@ async function renderSisotunglopChart() {
             }))
             .filter(item => item.count > 0); // Lọc bỏ lớp không có học viên (tùy chọn)
 
-        const labels = filteredData.map(item => `${item.label}: ${item.count} học viên`);
+        const labels = filteredData.map(item => `${item.label}: ${item.count} hv`);
         const counts = filteredData.map(item => item.count);
         const rawNames = filteredData.map(item => item.label);
 
@@ -1467,7 +1467,7 @@ async function renderSisotunglopChart() {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = ((value / total) * 100).toFixed(1);
                                 const sourceName = rawNames[context.dataIndex];
-                                return `${sourceName}: ${value} hv (${percentage}%)`;
+                                return `${sourceName}: ${value} học viên (${percentage}%)`;
                             }
                         }
                     }
