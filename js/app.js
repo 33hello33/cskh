@@ -1285,39 +1285,60 @@ async function renderCocaudoanhthulopChart() {
 async function renderThongkenolopChart() {
     const ctx = document.getElementById('thongkenolopChart').getContext('2d');
     
-    // 1. Hủy biểu đồ cũ nếu tồn tại
     if (window.thongkenolopChart instanceof Chart) {
         window.thongkenolopChart.destroy();
     }
 
     try {
-        // 2. Truy vấn Supabase: Lấy tên lớp và tiền nợ của học viên
-        // Chỉ lấy những học viên có nợ (conno > 0)
-        const { data, error } = await supabaseClient
-            .from('tbl_hd')
-            .select(`
-                conno,
-                tenlop
-            `)
-            .gt('conno', 0); // Lọc nợ lớn hơn 0
+        // 1. Truy vấn dữ liệu nợ từ 2 bảng
+        const [resHd, resBill] = await Promise.all([
+            supabaseClient
+                .from('tbl_hd')
+                .select('tenlop, conno')
+                .neq('daxoa', 'Đã Xóa')
+                .gt('conno', 0),
+            supabaseClient
+                .from('tbl_billhanghoa')
+                .select(`
+                    conno,
+                    tbl_hv!inner( malop(tenlop) )
+                `)
+                .neq('daxoa', 'Đã Xóa')
+                .gt('conno', 0)
+        ]);
 
-        if (error) throw error;
+        const parseMoney = (val) => {
+            if (!val) return 0;
+            return parseInt(val.toString().replace(/[^\d]/g, '')) || 0;
+        };
+
+        // Hàm làm sạch tên lớp như yêu cầu trước đó
+        const cleanLabel = (label) => {
+            if (!label) return null;
+            return label.toString().trim().replace(/[\r\n]+/g, '');
+        };
 
         const sourceDebt = {};
 
-        // 3. Xử lý cộng dồn nợ theo từng lớp
-        data.forEach(item => {
-            const tenLop = item.tbl_lop?.tenlop || 'Lớp chưa xác định';
-            
-            // Xử lý chuỗi tiền nợ (loại bỏ ký tự không phải số)
-            const rawDebt = item.conno ? item.conno.toString().replace(/[^\d]/g, '') : "0";
-            const debtAmount = parseInt(rawDebt) || 0;
-
-            sourceDebt[tenLop] = (sourceDebt[tenLop] || 0) + debtAmount;
+        // 2. Xử lý nợ từ bảng Hóa đơn (Học phí)
+        resHd.data.forEach(item => {
+            const label = cleanLabel(item.tenlop);
+            if (label) {
+                sourceDebt[label] = (sourceDebt[label] || 0) + parseMoney(item.conno);
+            }
         });
 
-        const sourceNames = Object.keys(sourceDebt);
-        const debtValues = Object.values(sourceDebt);
+        // 3. Xử lý nợ từ bảng Bill hàng hóa
+        resBill.data.forEach(item => {
+            const rawLabel = item.tbl_hv?.malop?.tenlop;
+            const label = cleanLabel(rawLabel);
+            if (label) {
+                sourceDebt[label] = (sourceDebt[label] || 0) + parseMoney(item.conno);
+            }
+        });
+
+        const sourceNames = Object.keys(sourceDebt).sort();
+        const debtValues = sourceNames.map(name => sourceDebt[name]);
 
         if (sourceNames.length === 0) {
             console.warn("Không có dữ liệu nợ lớp.");
@@ -1329,7 +1350,8 @@ async function renderThongkenolopChart() {
         // 4. Khởi tạo biểu đồ cột
         window.thongkenolopChart = new Chart(ctx, {
             type: 'bar',
-            plugins: [ChartDataLabels],
+            // Đảm bảo bạn đã nhúng thư viện chartjs-plugin-datalabels
+            plugins: [ChartDataLabels], 
             data: {
                 labels: sourceNames,
                 datasets: [{
@@ -1340,11 +1362,10 @@ async function renderThongkenolopChart() {
                     borderWidth: 1,
                     borderRadius: 4,
                     datalabels: {
-                        anchor: 'center',
-                        align: 'center',
-                        rotation: -90,
-                        color: '#ffffff',
-                        font: { weight: 'bold', size: 11 },
+                        anchor: 'end',
+                        align: 'top',
+                        color: '#444',
+                        font: { weight: 'bold', size: 10 },
                         formatter: function(value) {
                             if (value >= 1000000) return (value / 1000000).toFixed(1) + ' Tr';
                             if (value >= 1000) return (value / 1000).toFixed(0) + ' K';
@@ -1372,8 +1393,7 @@ async function renderThongkenolopChart() {
                                 if (value >= 1000000) return (value / 1000000) + 'M';
                                 return new Intl.NumberFormat('vi-VN').format(value);
                             }
-                        },
-                        title: { display: true, text: 'Số tiền nợ (VNĐ)' }
+                        }
                     }
                 }
             }
