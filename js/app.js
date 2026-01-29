@@ -707,7 +707,7 @@ async function renderOverviewCards() {
         const { count: totalCustomers, error: err1 } = await supabaseClient
             .from('tbl_hv')
             .select('*', { count: 'exact', head: true })
-            .eq('trangthai', 'Đang Học');
+            .neq('trangthai', 'Đã Nghỉ');
 
         // Hàm phụ để convert text "1,000,000" thành number 1000000
         const parseCurrency = (text) => {
@@ -1173,87 +1173,82 @@ async function renderTangtruongdoanhthuChart() {
 async function renderCocaudoanhthulopChart() {
     const ctx = document.getElementById('cocaudoanhthulopChart').getContext('2d');
     
-    // 1. Hủy biểu đồ cũ nếu đã tồn tại
     if (window.cocaudoanhthulopChart instanceof Chart) {
         window.cocaudoanhthulopChart.destroy();
     }
 
     try {
-        // 2. Lấy dữ liệu từ Supabase (Lấy cột tenlop và dadong từ bảng tbl_hd)
-        const { data: invoiceData, error } = await supabaseClient
-            .from('tbl_hd')
-            .select('tenlop, dadong')
-            .neq('daxoa', 'Đã Xóa');
+        // 1. Lấy dữ liệu từ 2 bảng
+        const [resHd, resBill] = await Promise.all([
+            supabaseClient.from('tbl_hd').select('tenlop, dadong').neq('daxoa', 'Đã Xóa'),
+            supabaseClient.from('tbl_billbanhang').select('tenlop, dadong').neq('daxoa', 'Đã Xóa')
+        ]);
 
-        if (error) throw error;
+        const parseMoney = (val) => {
+            if (!val) return 0;
+            return parseInt(val.toString().replace(/[^\d]/g, '')) || 0;
+        };
 
-        const sourceRevenue = {};
+        // 2. Gom nhóm dữ liệu theo từng lớp
+        const dataByClass = {}; // Cấu trúc: { "Lớp A": { hocPhi: 0, banHang: 0 }, ... }
 
-        // 3. Xử lý và cộng dồn doanh thu
-        invoiceData.forEach(inv => {
-            const label = inv.tenlop || 'Chưa xác định';
-            
-            // Xử lý chuỗi "1,000,000" thành số: loại bỏ dấu phẩy và chuyển sang số nguyên
-            const rawAmount = inv.dadong ? inv.dadong.toString().replace(/,/g, '') : "0";
-            const amountReceived = parseInt(rawAmount) || 0;
-
-            if (amountReceived > 0) {
-                sourceRevenue[label] = (sourceRevenue[label] || 0) + amountReceived;
-            }
+        resHd.data.forEach(item => {
+            const label = item.tenlop || 'Khác';
+            if (!dataByClass[label]) dataByClass[label] = { hocPhi: 0, banHang: 0 };
+            dataByClass[label].hocPhi += parseMoney(item.dadong);
         });
 
-        // 4. Chuẩn bị dữ liệu cho biểu đồ
-        const formatter = new Intl.NumberFormat('vi-VN');
-        const sourceNames = Object.keys(sourceRevenue);
-        const revenueValues = sourceNames.map(name => sourceRevenue[name]);
-        
-        // Nhãn hiển thị bên phải: "Tên lớp: 1.000.000 đ"
-        const displayLabels = sourceNames.map(name => 
-            `${name}: ${formatter.format(sourceRevenue[name])} đ`
-        );
+        resBill.data.forEach(item => {
+            const label = item.tenlop || 'Bán lẻ';
+            if (!dataByClass[label]) dataByClass[label] = { hocPhi: 0, banHang: 0 };
+            dataByClass[label].banHang += parseMoney(item.dadong);
+        });
 
-        if (revenueValues.length === 0) {
-            console.warn("Không có dữ liệu doanh thu để hiển thị.");
-            return;
-        }
+        // 3. Chuẩn bị mảng dữ liệu cho Chart.js
+        const classLabels = Object.keys(dataByClass);
+        const hocPhiValues = classLabels.map(cls => dataByClass[cls].hocPhi);
+        const banHangValues = classLabels.map(cls => dataByClass[cls].banHang);
 
-        const colors = generateChartColors(sourceNames.length);
-
-        // 5. Khởi tạo Pie Chart
+        // 4. Khởi tạo biểu đồ Cột Chồng (Stacked Bar Chart)
         window.cocaudoanhthulopChart = new Chart(ctx, {
-            type: 'pie',
+            type: 'bar', 
             data: {
-                labels: displayLabels,
-                datasets: [{
-                    data: revenueValues,
-                    backgroundColor: colors,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
+                labels: classLabels,
+                datasets: [
+                    {
+                        label: 'Học phí',
+                        data: hocPhiValues,
+                        backgroundColor: '#10B981', // Màu xanh lá
+                        stack: 'Stack 0',
+                    },
+                    {
+                        label: 'Bán hàng',
+                        data: banHangValues,
+                        backgroundColor: '#3B82F6', // Màu xanh dương
+                        stack: 'Stack 0',
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'right',
-                        align: 'start',
-                        labels: {
-                            boxWidth: 12,
-                            padding: 15,
-                            font: { size: 11, weight: 'bold' }
-                        }
-                    },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                const value = context.raw;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                const sourceName = sourceNames[context.dataIndex];
-                                return `${sourceName}: ${formatter.format(value)} VNĐ (${percentage}%)`;
+                            label: (context) => {
+                                const val = context.raw;
+                                return `${context.dataset.label}: ${new Intl.NumberFormat('vi-VN').format(val)} đ`;
                             }
+                        }
+                    },
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    x: { stacked: true }, // Kích hoạt chồng cột trục X
+                    y: { 
+                        stacked: true, // Kích hoạt chồng cột trục Y
+                        ticks: {
+                            callback: (val) => new Intl.NumberFormat('vi-VN').format(val)
                         }
                     }
                 }
@@ -1261,7 +1256,7 @@ async function renderCocaudoanhthulopChart() {
         });
 
     } catch (err) {
-        console.error("Lỗi khi tải biểu đồ cơ cấu doanh thu:", err.message);
+        console.error("Lỗi:", err.message);
     }
 }
 
