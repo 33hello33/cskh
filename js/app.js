@@ -723,8 +723,7 @@ async function renderOverviewCards() {
             .select('dadong')
             .neq('daxoa', 'Đã Xóa')
             .gte('ngaylap', fromDate)
-            .lte('ngaylap', toDate)
-            
+            .lte('ngaylap', toDate),
             supabaseClient.from('tbl_billhanghoa')
             .select('dadong')
             .neq('daxoa', 'Đã Xóa')
