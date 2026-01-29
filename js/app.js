@@ -812,6 +812,13 @@ function generateChartColors(itemCount) {
 async function renderCocauthuchiChart() {
     const ctx = document.getElementById('cocauthuchiChart').getContext('2d');
     
+    const fromDateValue = document.getElementById('report-from-date').value;
+    const toDateValue = document.getElementById('report-to-date').value;
+    
+    // Chuyển đổi sang định dạng timestamp để bao gồm toàn bộ ngày cuối cùng
+    const fromDate = `${fromDateValue}T00:00:00`;
+    const toDate = `${toDateValue}T23:59:59`;
+    
     // 1. Hủy biểu đồ cũ nếu đã tồn tại
     if (window.cocauthuchiChart instanceof Chart) {
         window.cocauthuchiChart.destroy();
@@ -820,14 +827,42 @@ async function renderCocauthuchiChart() {
     try {
         // 2. Gọi Supabase lấy dữ liệu từ 4 bảng
         // Chúng ta lấy toàn bộ để tính tổng tích lũy (hoặc thêm .gte để lọc theo thời gian nếu cần)
-        const [resHd, resBill, resChi, resNhap] = await Promise.all([
-            supabaseClient.from('tbl_hd').select('dadong'),
-            supabaseClient.from('tbl_billhanghoa').select('dadong'),
-            supabaseClient.from('tbl_phieuchi').select('chiphi'),
-            supabaseClient.from('tbl_nhapkho').select('thanhtien')
+        const [resHd, resBill, resChi, resThu, resNhap, resLuong] = await Promise.all([
+            supabaseClient.from('tbl_hd')
+            .select('dadong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', fromDate)
+            .lte('ngaylap', toDate),
+            supabaseClient.from('tbl_billhanghoa')
+            .select('dadong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', fromDate)
+            .lte('ngaylap', toDate),
+            supabaseClient.from('tbl_phieuchi')
+            .select('chiphi')
+            .neq('daxoa', 'Đã Xóa')
+            .eq('loaiphieu', 'Chi')
+            .gte('ngaylap', fromDate)
+            .lte('ngaylap', toDate),
+            supabaseClient.from('tbl_phieuchi')
+            .select('chiphi')
+            .neq('daxoa', 'Đã Xóa')
+            .eq('loaiphieu', 'Thu')
+            .gte('ngaylap', fromDate)
+            .lte('ngaylap', toDate),
+            supabaseClient.from('tbl_nhapkho')
+            .select('thanhtien')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaynhap', fromDate)
+            .lte('ngaynhap', toDate),
+            supabaseClient.from('tbl_phieuchamcong')
+            .select('tongcong')
+            .neq('daxoa', 'Đã Xóa')
+            .gte('ngaylap', fromDate)
+            .lte('ngaylap', toDate),
         ]);
 
-        if (resHd.error || resBill.error || resChi.error || resNhap.error) {
+        if (resHd.error || resBill.error || resChi.error || resThu.error ||resNhap.error) {
             throw new Error("Lỗi khi truy vấn dữ liệu thu chi");
         }
 
@@ -837,31 +872,38 @@ async function renderCocauthuchiChart() {
             return parseInt(val.toString().replace(/[^\d]/g, '')) || 0;
         };
 
-        // 3. Tính toán tổng Thu (Học phí + Bán hàng)
-        const totalThu = [...resHd.data, ...resBill.data].reduce((sum, item) => sum + parseAmount(item.dadong), 0);
+     // 2. Tính toán chi tiết từng mục
+        const dataDetails = {
+            'Học phí': resHd.data?.reduce((sum, i) => sum + parseAmount(i.dadong), 0) || 0,
+            'Bán hàng': resBill.data?.reduce((sum, i) => sum + parseAmount(i.dadong), 0) || 0,
+            'Thu khác': resThu.data?.reduce((sum, i) => sum + parseAmount(i.chiphi), 0) || 0,
+            'Chi phí ngoài': resChi.data?.reduce((sum, i) => sum + parseAmount(i.chiphi), 0) || 0,
+            'Nhập kho': resNhap.data?.reduce((sum, i) => sum + parseAmount(i.thanhtien), 0) || 0,
+            'Lương nhân viên': resLuong.data?.reduce((sum, i) => sum + parseAmount(i.tongcong), 0) || 0
+        };
 
-        // 4. Tính toán tổng Chi (Phiếu chi + Nhập kho)
-        const totalChi = [...resChi.data, ...resNhap.data].reduce((sum, item) => {
-            // Kiểm tra cả 2 cột chiphi và thanhtien vì lấy từ 2 bảng khác nhau
-            const amount = parseAmount(item.chiphi || item.thanhtien);
-            return sum + amount;
-        }, 0);
+        // 3. Lọc bỏ các mục bằng 0 để biểu đồ đẹp hơn
+        const filteredLabels = Object.keys(dataDetails).filter(key => dataDetails[key] > 0);
+        const filteredData = filteredLabels.map(key => dataDetails[key]);
 
-        // Định dạng tiền tệ
         const formatter = new Intl.NumberFormat('vi-VN');
-        const labelThu = `Tổng Thu: ${formatter.format(totalThu)} đ`;
-        const labelChi = `Tổng Chi: ${formatter.format(totalChi)} đ`;
 
-        // 5. Khởi tạo biểu đồ Pie
+        // 4. Khởi tạo biểu đồ
         window.cocauthuchiChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: [labelThu, labelChi],
+                labels: filteredLabels,
                 datasets: [{
-                    data: [totalThu, totalChi],
-                    backgroundColor: ['#10B981', '#EF4444'], // Xanh cho Thu, Đỏ cho Chi
-                    borderColor: '#ffffff',
-                    borderWidth: 2
+                    data: filteredData,
+                    backgroundColor: [
+                        '#10B981', // Học phí (Xanh lá)
+                        '#34D399', // Bán hàng (Xanh nhạt)
+                        '#60A5FA', // Thu khác (Xanh dương)
+                        '#F87171', // Chi ngoài (Đỏ nhạt)
+                        '#FB923C', // Nhập kho (Cam)
+                        '#A78BFA'  // Lương (Tím)
+                    ],
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -869,13 +911,16 @@ async function renderCocauthuchiChart() {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: true,
                         position: 'right',
-                        align: 'start',
                         labels: {
-                            boxWidth: 12,
-                            padding: 15,
-                            font: { size: 12, weight: 'bold' }
+                            generateLabels: (chart) => {
+                                const data = chart.data;
+                                return data.labels.map((label, i) => ({
+                                    text: `${label}: ${formatter.format(data.datasets[0].data[i])}đ`,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    index: i
+                                }));
+                            }
                         }
                     },
                     tooltip: {
@@ -883,8 +928,8 @@ async function renderCocauthuchiChart() {
                             label: function(context) {
                                 const value = context.raw;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                return `Số tiền: ${formatter.format(value)} đ (${percentage}%)`;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return ` ${formatter.format(value)}đ (${percentage}%)`;
                             }
                         }
                     }
