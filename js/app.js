@@ -691,7 +691,6 @@ function renderReports() {
 
 // Render overview cards
 async function renderOverviewCards() {
-    const supabase = createClient(); // Giả định bạn đã khởi tạo supabase client
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
