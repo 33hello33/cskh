@@ -361,7 +361,7 @@ async function performTraCuu() {
     if (parentDashboard) {
         parentDashboard.style.display = 'block';
         // Hiển thị tên học sinh (giả định)
-        document.getElementById('display-student-name').innerText = studentId;
+        document.getElementById('display-student-name').innerText = studentId + ': ' + data.tenhv ;
 
         // Gọi hàm load dữ liệu học phí
         await loadLatestFeeNotification(studentId);
@@ -681,7 +681,7 @@ function renderReports() {
     renderCocauthuchiChart();
     renderTangtruongdoanhthuChart();
     renderTangtruongloinhuanChart();
-//    renderTopCustomersByRevenue();
+    renderTopCustomersByRevenue();
     renderCocaudoanhthulopChart();
     renderThongkenolopChart();
     renderTangtruonghocvienChart();
