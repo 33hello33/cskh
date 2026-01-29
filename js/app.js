@@ -1181,7 +1181,12 @@ async function renderCocaudoanhthulopChart() {
         // 1. Lấy dữ liệu từ 2 bảng
         const [resHd, resBill] = await Promise.all([
             supabaseClient.from('tbl_hd').select('tenlop, dadong').neq('daxoa', 'Đã Xóa'),
-            supabaseClient.from('tbl_billbanhang').select('tenlop, dadong').neq('daxoa', 'Đã Xóa')
+            supabaseClient
+                .from('tbl_billhanghoa')
+                .select(`
+                    dadong,
+                    tbl_hv!inner( malop(tenlop) ) `)
+                .neq('daxoa', 'Đã Xóa')
         ]);
 
         const parseMoney = (val) => {
