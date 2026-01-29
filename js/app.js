@@ -484,7 +484,13 @@ async function performLogin() {
         }
 
         // 2. Nếu đăng nhập thành công
-        currentUser = user;
+        currentUser = {
+            id: user.manv,
+            name: user.tennv,
+            position: user.role,
+            username: user.username,
+            isManager: (datauser.role === "Quản lý" || datauser.role === "Nhân Viên VP")
+        };
         currentSessionId = `session_${user.manv}_${Date.now()}`;
         
         // Lưu sessionId vào localStorage
