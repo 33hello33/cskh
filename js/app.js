@@ -1198,13 +1198,13 @@ async function renderCocaudoanhthulopChart() {
         const dataByClass = {}; // Cấu trúc: { "Lớp A": { hocPhi: 0, banHang: 0 }, ... }
 
         resHd.data.forEach(item => {
-            const label = item.tenlop || 'Khác';
+            const label = item.tenlop;
             if (!dataByClass[label]) dataByClass[label] = { hocPhi: 0, banHang: 0 };
             dataByClass[label].hocPhi += parseMoney(item.dadong);
         });
 
         resBill.data.forEach(item => {
-            const label = item.tenlop || 'Bán lẻ';
+            const label = item.tenlop;
             if (!dataByClass[label]) dataByClass[label] = { hocPhi: 0, banHang: 0 };
             dataByClass[label].banHang += parseMoney(item.dadong);
         });
