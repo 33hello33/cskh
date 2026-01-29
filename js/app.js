@@ -2479,8 +2479,8 @@ window.saveCustomer = async function() {
     try {
         showButtonLoading('#customer-modal .d-flex .btn-success', 'Đang lưu...');
        const result = customerId 
-            ? await callGAS('updateCustomer', parseInt(customerId), customerData)
-            : await callGAS('addCustomer', customerData);
+            ? await updateCustomer(parseInt(customerId), customerData) 
+            : await caddCustomer(customerData);
 
         if (result.success) {
             showNotification('Thành công!');
@@ -2500,6 +2500,87 @@ window.saveCustomer = async function() {
     }
 };
 
+async function addCustomer(customerData) {
+  try {
+    // 1. Chuẩn bị object dữ liệu khớp với tên cột trong Supabase
+    // Lưu ý: Nếu cột 'id' trong Supabase là Primary Key tự động tăng (Identity), 
+    // bạn không cần truyền id vào đây.
+    const dataToInsert = {
+      createdDate: customerData.createdDate,
+      name: customerData.name,
+      phone: customerData.phone,
+      notes: customerData.notes,
+      address: customerData.address,
+      status: customerData.status,
+      assignedStaff: customerData.assignedStaff,
+      source: customerData.source
+    };
+
+    // 2. Thực hiện lệnh insert vào bảng tbl_khachhang
+    const { data, error } = await supabaseClient
+      .from('tbl_khachhang')
+      .insert([dataToInsert])
+      .select(); // Trả về dữ liệu vừa chèn (bao gồm cả ID mới sinh ra)
+
+    if (error) {
+      throw error;
+    }
+
+    // 3. Trả về kết quả giống định dạng cũ để không phải sửa code xử lý ở app.js
+    return {
+      success: true,
+      data: data[0]
+    };
+
+  } catch (error) {
+    console.error('Lỗi khi thêm khách hàng vào Supabase:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function updateCustomer(customerId, customerData) {
+    try {
+        // 1. Chuẩn bị dữ liệu để cập nhật
+        // Chúng ta loại bỏ các thuộc tính không cần thiết hoặc thuộc tính ảo (như _editorName)
+        const dataToUpdate = {
+            createdDate: customerData.createdDate,
+            name: customerData.name,
+            phone: customerData.phone,
+            notes: customerData.notes,
+            address: customerData.address,
+            status: customerData.status,
+            assignedStaff: customerData.assignedStaff,
+            source: customerData.source
+        };
+
+        // 2. Thực hiện lệnh update trong Supabase
+        const { data, error } = await supabaseClient
+            .from('tbl_khachhang')
+            .update(dataToUpdate)
+            .eq('id', customerId) // Điều kiện: tìm dòng có id khớp với customerId
+            .select(); // Trả về dữ liệu sau khi cập nhật thành công
+
+        if (error) {
+            throw error;
+        }
+
+        // 3. Trả về kết quả để app.js xử lý tiếp
+        return {
+            success: true,
+            data: data[0]
+        };
+
+    } catch (error) {
+        console.error('Lỗi khi cập nhật khách hàng trên Supabase:', error.message);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
 
 // Thêm function kiểm tra nhân viên có được sử dụng không
 function isStaffInUse(staffName) {
