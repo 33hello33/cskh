@@ -121,6 +121,9 @@ async function initApp() {
         // -----------------------------------------
 */
         statuses = await getStatusesFromSupabase();
+        sources = await getSourcesFromSupabase();
+        staff = await getStaffFromSupabase();
+       
         showUserInfo();
         renderStatusTabs();
         setupPagination();
@@ -173,12 +176,58 @@ async function getStatusesFromSupabase() {
     // Chuyển đổi dữ liệu từ database sang định dạng mảng statuses cũ của bạn
     const statuses = data.map(item => ({
         id: item.id,
-        name: item.tentrangthai, // Đổi tentrangthai -> name
-        color: item.mausac      // Đổi mausac -> color
+        name: item.tentrangthai, 
+        color: item.mausac   
     }));
 
     return statuses;
 }
+
+async function getSourcesFromSupabase() {
+    // Giả định bạn đã khởi tạo supabaseClient trước đó
+    const { data, error } = await supabaseClient
+        .from('tbl_source')
+        .select('id, tennguonkhach, mota');
+
+    if (error) {
+        console.error('Lỗi khi lấy dữ liệu status:', error.message);
+        return [];
+    }
+
+    // Chuyển đổi dữ liệu từ database sang định dạng mảng statuses cũ của bạn
+    const sources = data.map(item => ({
+        id: item.id,
+        name: item.tennguonkhach, 
+        description: item.mota     
+    }));
+
+    return sources;
+}
+
+async function getStaffFromSupabase() {
+    // Giả định bạn đã khởi tạo supabaseClient trước đó
+    const { data, error } = await supabaseClient
+        .from('tbl_nv')
+        .select('manv, tennv, role');
+
+    if (error) {
+        console.error('Lỗi khi lấy dữ liệu status:', error.message);
+        return [];
+    }
+
+    // Chuyển đổi dữ liệu từ database sang định dạng mảng statuses cũ của bạn
+    const staff = data.map(item => ({
+        id: item.manv,
+        name: item.tennv, 
+        position: item.role,
+        username: '',
+        password: '',
+        manager: ''
+    }));
+
+    return statuses;
+}
+
 
 // Chuyển đổi mode trong Login Modal
 function toggleLoginMode(mode) {
