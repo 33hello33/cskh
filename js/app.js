@@ -712,7 +712,7 @@ async function renderOverviewCards() {
         // Chúng ta lấy dữ liệu từ 2 bảng
         const [resHd, resBill] = await Promise.all([
             supabaseClient.from('tbl_hd').select('dadong'),
-            supabaseClient.from('tbl_billHangHoa').select('dadong')
+            supabaseClient.from('tbl_billhanghoa').select('dadong')
         ]);
         
         const revenueHd = resHd.data?.reduce((sum, item) => sum + parseCurrency(item.dadong), 0) || 0;
