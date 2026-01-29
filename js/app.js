@@ -840,13 +840,13 @@ async function renderCocauthuchiChart() {
             .lte('ngaylap', toDate),
             supabaseClient.from('tbl_phieuchi')
             .select('chiphi')
-            .neq('daxoa', 'Đã Xóa')
+            .or('daxoa.neq."Đã Xóa",daxoa.is.null') // Lấy cả khác "Đã Xóa" và NULL
             .eq('loaiphieu', 'Chi')
             .gte('ngaylap', fromDate)
             .lte('ngaylap', toDate),
             supabaseClient.from('tbl_phieuchi')
             .select('chiphi')
-            .neq('daxoa', 'Đã Xóa')
+            .or('daxoa.neq."Đã Xóa",daxoa.is.null') // Lấy cả khác "Đã Xóa" và NULL
             .eq('loaiphieu', 'Thu')
             .gte('ngaylap', fromDate)
             .lte('ngaylap', toDate),
@@ -877,7 +877,7 @@ async function renderCocauthuchiChart() {
             'Học phí': resHd.data?.reduce((sum, i) => sum + parseAmount(i.dadong), 0) || 0,
             'Bán hàng': resBill.data?.reduce((sum, i) => sum + parseAmount(i.dadong), 0) || 0,
             'Thu khác': resThu.data?.reduce((sum, i) => sum + parseAmount(i.chiphi), 0) || 0,
-            'Chi phí ngoài': resChi.data?.reduce((sum, i) => sum + parseAmount(i.chiphi), 0) || 0,
+            'Phiếu chi': resChi.data?.reduce((sum, i) => sum + parseAmount(i.chiphi), 0) || 0,
             'Nhập kho': resNhap.data?.reduce((sum, i) => sum + parseAmount(i.thanhtien), 0) || 0,
             'Lương nhân viên': resLuong.data?.reduce((sum, i) => sum + parseAmount(i.tongcong), 0) || 0
         };
