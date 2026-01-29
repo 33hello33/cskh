@@ -1185,7 +1185,8 @@ async function renderCocaudoanhthulopChart() {
                 .from('tbl_billhanghoa')
                 .select(`
                     dadong,
-                    tbl_hv!inner( malop(tenlop) ) `)
+                    tbl_hv!inner( malop(tenlop) ) 
+                `)
                 .neq('daxoa', 'Đã Xóa')
         ]);
 
@@ -1194,27 +1195,42 @@ async function renderCocaudoanhthulopChart() {
             return parseInt(val.toString().replace(/[^\d]/g, '')) || 0;
         };
 
-        // 2. Gom nhóm dữ liệu theo từng lớp
-        const dataByClass = {}; // Cấu trúc: { "Lớp A": { hocPhi: 0, banHang: 0 }, ... }
+        // Hàm làm sạch tên lớp (Xóa khoảng trắng, xuống dòng \r \n)
+        const cleanLabel = (label) => {
+            if (!label) return null;
+            return label.toString().trim().replace(/[\r\n]+/g, '');
+        };
 
+        const dataByClass = {}; 
+
+        // 2. Xử lý bảng Hóa đơn (Học phí)
         resHd.data.forEach(item => {
-            const label = item.tenlop;
-            if (!dataByClass[label]) dataByClass[label] = { hocPhi: 0, banHang: 0 };
-            dataByClass[label].hocPhi += parseMoney(item.dadong);
+            const label = cleanLabel(item.tenlop);
+            if (label) { // Chỉ lấy nếu lớp có tên hợp lệ
+                if (!dataByClass[label]) dataByClass[label] = { hocPhi: 0, banHang: 0 };
+                dataByClass[label].hocPhi += parseMoney(item.dadong);
+            }
         });
 
+        // 3. Xử lý bảng Bill bán hàng (Bán hàng)
         resBill.data.forEach(item => {
-            const label = item.tenlop;
-            if (!dataByClass[label]) dataByClass[label] = { hocPhi: 0, banHang: 0 };
-            dataByClass[label].banHang += parseMoney(item.dadong);
+            // Lưu ý: Phải truy xuất đúng đường dẫn từ kết quả Join
+            const rawLabel = item.tbl_hv?.malop?.tenlop;
+            const label = cleanLabel(rawLabel);
+            
+            if (label) {
+                if (!dataByClass[label]) dataByClass[label] = { hocPhi: 0, banHang: 0 };
+                dataByClass[label].banHang += parseMoney(item.dadong);
+            }
         });
 
-        // 3. Chuẩn bị mảng dữ liệu cho Chart.js
-        const classLabels = Object.keys(dataByClass);
+        // 4. Chuẩn bị mảng dữ liệu cho Chart.js
+        // Sắp xếp Alphabet tên lớp để biểu đồ trông chuyên nghiệp hơn
+        const classLabels = Object.keys(dataByClass).sort();
         const hocPhiValues = classLabels.map(cls => dataByClass[cls].hocPhi);
         const banHangValues = classLabels.map(cls => dataByClass[cls].banHang);
 
-        // 4. Khởi tạo biểu đồ Cột Chồng (Stacked Bar Chart)
+        // 5. Khởi tạo biểu đồ Stacked Bar Chart
         window.cocaudoanhthulopChart = new Chart(ctx, {
             type: 'bar', 
             data: {
@@ -1223,13 +1239,13 @@ async function renderCocaudoanhthulopChart() {
                     {
                         label: 'Học phí',
                         data: hocPhiValues,
-                        backgroundColor: '#10B981', // Màu xanh lá
+                        backgroundColor: '#10B981',
                         stack: 'Stack 0',
                     },
                     {
                         label: 'Bán hàng',
                         data: banHangValues,
-                        backgroundColor: '#3B82F6', // Màu xanh dương
+                        backgroundColor: '#3B82F6',
                         stack: 'Stack 0',
                     }
                 ]
@@ -1249,9 +1265,9 @@ async function renderCocaudoanhthulopChart() {
                     legend: { position: 'top' }
                 },
                 scales: {
-                    x: { stacked: true }, // Kích hoạt chồng cột trục X
+                    x: { stacked: true },
                     y: { 
-                        stacked: true, // Kích hoạt chồng cột trục Y
+                        stacked: true,
                         ticks: {
                             callback: (val) => new Intl.NumberFormat('vi-VN').format(val)
                         }
