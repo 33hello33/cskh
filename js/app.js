@@ -644,7 +644,11 @@ function showUserInfo() {
             document.body.classList.add('manager-user');
         } else {
             document.body.classList.remove('manager-user');
-           document.getElementById("reports").remove();
+           const element = document.getElementById("reports");
+            if (element) {
+                element.remove();
+            }
+           
           const reportTab = document.querySelector('.nav-tab[data-tab="reports"]');
             if (reportTab) {
                 reportTab.style.display = 'none';
