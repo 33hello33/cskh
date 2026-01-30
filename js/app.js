@@ -123,6 +123,7 @@ async function initApp() {
         statuses = await getStatusesFromSupabase();
         sources = await getSourcesFromSupabase();
         staff = await getStaffFromSupabase();
+        customers = await getCustomersFromSupabase();
        
         showUserInfo();
         renderStatusTabs();
@@ -228,6 +229,32 @@ async function getStaffFromSupabase() {
     return staff;
 }
 
+async function getCustomersFromSupabase() {
+    // Giả định bạn đã khởi tạo supabaseClient trước đó
+    const { data, error } = await supabaseClient
+        .from('tbl_khachhang')
+        .select('*');
+
+    if (error) {
+        console.error('Lỗi khi lấy dữ liệu status:', error.message);
+        return [];
+    }
+
+    // Chuyển đổi dữ liệu từ database sang định dạng mảng statuses cũ của bạn
+    const customers = data.map(item => ({
+        id: item.id,
+        createdDate: item.createdDate, 
+        name: item.name,
+        phone: item.phone,
+        notes: item.notes,
+         address: item.address,
+         status: item.status,
+         assignedStaff: item.assignedStaff,
+         source: item.source
+    }));
+
+    return customers;
+}
 
 // Chuyển đổi mode trong Login Modal
 function toggleLoginMode(mode) {
