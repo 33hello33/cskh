@@ -3835,8 +3835,8 @@ async function refreshData() {
         //setupCustomDateFilter();
 
         //    window.allHistoryData = result.history || [];
-            window.reminders = result.reminders || [];
-       //     updateReminderTabBadge();
+        //    window.reminders = result.reminders || [];
+        //     updateReminderTabBadge();
 
             const reportsTab = document.getElementById('reports');
             if (reportsTab && reportsTab.classList.contains('active')) {
