@@ -2222,50 +2222,6 @@ function editCustomer(customerId) {
     document.getElementById('customer-address').value = customer.address || '';
     document.getElementById('customer-source').value = customer.source || '';
 
-    // UPDATED: Sử dụng index thay vì createdAt
-    const closedFields = document.getElementById('closed-fields');
-    if (customer.orders && customer.orders.length > 0) {
-        const ordersHtml = customer.orders
-            .sort((a, b) => new Date(b.closedDate) - new Date(a.closedDate))
-            .map((order, index) => `
-                <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 10px; padding: 4px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #059669;">
-                    <div style="flex: 1;">
-                        <strong>Đơn ${customer.orders.length - index}:</strong> ${order.orderCode || 'N/A'} - ${formatDate(order.closedDate)} - 
-                        <span style="color: #059669; font-weight: 600;">${new Intl.NumberFormat('vi-VN').format(order.orderValue || 0)}</span>
-                    </div>
-                    <div style="display: flex; gap: 4px;">
-                        <button type="button" class="btn btn-sm btn-no-bg btn-secondary" onclick="editOrderInForm('${order.id}', ${customer.id})" title="Sửa">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-no-bg btn-danger" onclick="deleteOrderInForm('${order.id}', ${customer.id})" title="Xóa">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-
-        closedFields.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h4 style="margin: 0; color: var(--primary);">Danh sách đơn hàng (${customer.orders.length}):</h4>
-                <button type="button" class="btn btn-sm btn-success" onclick="showAddOrderInFormModal(${customer.id})">
-                    <i class="fas fa-plus"></i> Thêm đơn
-                </button>
-            </div>
-            ${ordersHtml}
-        `;
-        closedFields.style.display = 'block';
-    } else {
-        closedFields.innerHTML = `
-            <div style="text-align: center; padding: 20px;">
-                <p style="color: #666; margin-bottom: 10px;">Chưa có đơn hàng nào</p>
-                <button type="button" class="btn btn-sm btn-success" onclick="showAddOrderInFormModal(${customer.id})">
-                    <i class="fas fa-plus"></i> Thêm đơn hàng đầu tiên
-                </button>
-            </div>
-        `;
-        closedFields.style.display = 'block';
-    }
-
     setTimeout(() => {
         document.querySelector('select[name="status"]').value = customer.status || '';
         document.querySelector('select[name="assignedStaff"]').value = customer.assignedStaff || '';
