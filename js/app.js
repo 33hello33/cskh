@@ -5,6 +5,8 @@ const SUPABASE_URL = 'https://xibbuggyxgvjqpkasusb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhpYmJ1Z2d5eGd2anFwa2FzdXNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4NjUzODEsImV4cCI6MjA2OTQ0MTM4MX0.lM2TnbCwW3y6nGIhbQO1yq9mwP4AAhlmGo0oUU5yTAM';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 giờ
+
 async function callGAS(functionName, ...args) {
     try {
         const response = await fetch(SCRIPT_URL, {
@@ -112,6 +114,8 @@ async function initApp() {
             showLoginModal();
         }
 
+      refreshData();
+
 /*
         currentUser = result.user;
         staff = result.staff;
@@ -125,26 +129,7 @@ async function initApp() {
         updateReminderTabBadge();
 */ 
         // -----------------------------------------
-
-        statuses = await getStatusesFromSupabase();
-        sources = await getSourcesFromSupabase();
-        staff = await getStaffFromSupabase();
-        customers = await getCustomersFromSupabase();
-       
-        showUserInfo();
-        renderStatusTabs();
-        setupPagination();
-        filterCustomers();
-        populateDropdowns();
-        renderSettingsContent();
-        //setupCustomDateFilter();
-
-
-        const reportsTab = document.getElementById('reports');
-        if (reportsTab && reportsTab.classList.contains('active')) {
-            renderReports();
-        }
-
+   
        /*
         // Khởi tạo bộ lọc ngày cho history (mặc định hôm nay)
         const historyDateInput = document.getElementById('history-date-filter');
@@ -550,8 +535,8 @@ async function performLogin() {
 
         hideLoginModal();
         showUserInfo();
-        
-        initApp(); // Reload app with user permissions
+        // initApp(); <-- Bỏ dòng này
+        refreshData(); // Chỉ cần refresh dữ liệu là đủ
 
     } catch (error) {
         console.error('Lỗi đăng nhập:', error);
@@ -3872,17 +3857,16 @@ async function changeCustomerStatus(customerId, newStatus) {
 
 async function refreshData() {
     try {
-        const result = await callGAS(
-                'getAllData',currentSessionId);
+        statuses = await getStatusesFromSupabase();
+        sources = await getSourcesFromSupabase();
+        staff = await getStaffFromSupabase();
+        customers = await getCustomersFromSupabase();
+       
+        showUserInfo();
+        setupPagination();
+        populateDropdowns();
+        //setupCustomDateFilter();
 
-        if (result.success) {
-            currentUser = result.user;
-            staff = result.staff;
-            statuses = result.statuses;
-            sources = result.sources;
-            customers = result.customers;
-            invoiceData = result.invoices || [];
-           
             window.allHistoryData = result.history || [];
             window.reminders = result.reminders || [];
             updateReminderTabBadge();
@@ -3907,8 +3891,6 @@ async function refreshData() {
                 document.querySelector('.nav-tab[data-tab="reminders"]').classList.contains('active')) {
                 renderReminders();
             }
-
-        }
     } catch (error) {
         console.error('Lỗi refresh data:', error);
     }
