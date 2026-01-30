@@ -3861,21 +3861,20 @@ async function refreshData() {
         sources = await getSourcesFromSupabase();
         staff = await getStaffFromSupabase();
         customers = await getCustomersFromSupabase();
-       
+        
+        // Cập nhật giao diện các tab khác
         showUserInfo();
+        renderStatusTabs();
         setupPagination();
+        filterCustomers();
         populateDropdowns();
+        renderSettingsContent();
+        
         //setupCustomDateFilter();
 
         //    window.allHistoryData = result.history || [];
        //     window.reminders = result.reminders || [];
-            updateReminderTabBadge();
-
-            // Cập nhật giao diện các tab khác
-            filterCustomers();
-            populateDropdowns();
-            renderSettingsContent();
-            renderStatusTabs();
+       //     updateReminderTabBadge();
 
             const reportsTab = document.getElementById('reports');
             if (reportsTab && reportsTab.classList.contains('active')) {
