@@ -5187,9 +5187,25 @@ async function toggleReminderStatus(id, date, newStatus) {
     }
 
     // 3. Gửi xuống Server lưu lại
-    await callGAS('updateReminderStatus',id, date, newStatus, false);
+    await updateReminderStatus(id, date, newStatus, false);
 }
+async function updateReminderStatus(id, date, newStatus, isDelete){
+        const dataToUpdate = {
+            id: id,
+            isDone: newStatus,
+            isDelete: isDelete
+        };
 
+        // 2. Thực hiện lệnh update trong Supabase
+        const { data, error } = await supabaseClient
+            .from('tbl_nhacviec')
+            .update(dataToUpdate)
+            .eq('id', id) // Điều kiện: tìm dòng có id khớp với customerId
+
+        if (error) {
+            throw error;
+        }
+}
 async function deleteReminder(id, date) {
     // 1. Hỏi xác nhận Yes/No
     if(!(await showCustomConfirm("Bạn có chắc chắn muốn xóa vĩnh viễn công việc này?"))) return;
@@ -5208,8 +5224,7 @@ async function deleteReminder(id, date) {
 
     // 3. Gửi lệnh xóa xuống Server
     try {
-        await callGAS(
-                'updateReminderStatus', id, date, false, true); // true = tham số isDelete
+        await updateReminderStatus(id, date, false, true); // true = tham số isDelete
         showNotification("Đã xóa công việc!");
     } catch(e) {
         // Nếu lỗi thì hoàn tác lại dữ liệu cũ
