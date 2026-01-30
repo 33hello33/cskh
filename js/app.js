@@ -242,7 +242,7 @@ async function getStaffFromSupabase() {
     const staff = data.map(item => ({
         id: item.manv,
         name: item.tennv, 
-        position: item.role,
+        role: item.role,
         username: '',
         password: '',
         manager: ''
@@ -561,7 +561,7 @@ async function performLogin() {
         currentUser = {
             id: user.manv,
             name: user.tennv,
-            position: user.role,
+            role: user.role,
             username: user.username,
             isManager: (user.role === "Quản lý" || user.role === "Nhân Viên VP")
         };
@@ -3070,7 +3070,7 @@ function renderSettingsContent() {
         const staffHtml = staff.length > 0 ? staff.map(s => `
             <div class="settings-item">
                 <span>
-                    ${s.name} - ${s.position}
+                    ${s.name} - ${s.role}
                     ${s.manager ? `<span style="color: #666; font-size: 12px; margin-left: 8px;">(QL: ${s.manager})</span>` : ''}
                 </span>
                 <div class="d-flex gap-2">
@@ -3240,7 +3240,7 @@ function editStaff(staffId) {
 
     document.getElementById('staff-id').value = staffMember.id;
     document.getElementById('staff-name').value = staffMember.name;
-    document.getElementById('staff-position').value = staffMember.position;
+    document.getElementById('staff-position').value = staffMember.role;
     document.getElementById('staff-username').value = staffMember.username || '';
     document.getElementById('staff-password').value = staffMember.password || '';
     // Kiểm tra xem nhân viên có được sử dụng không
@@ -3298,7 +3298,7 @@ function editStaff(staffId) {
     }
 
     const managerField = document.getElementById('manager-field');
-    if (staffMember.position === 'Nhân viên') {
+    if (staffMember.role === 'Nhân viên VP') {
         managerField.style.display = 'block';
         populateManagerDropdown(staffId);
         setTimeout(() => {
@@ -3333,7 +3333,7 @@ async function saveStaff() {
     };
 
     // Validate chỉ những field cần thiết
-    if (!staffData.name || !staffData.position || !staffData.username || !staffData.password) {
+    if (!staffData.name || !staffData.role || !staffData.username || !staffData.password) {
         alert('Vui lòng điền đầy đủ thông tin');
         return;
     }
@@ -3374,7 +3374,7 @@ function populateManagerDropdown(excludeStaffId) {
     if (!managerSelect) return;
 
     const managers = staff.filter(s => 
-        s.position !== 'Admin' && s.id != excludeStaffId
+        s.role !== 'Quản lý' && s.id != excludeStaffId
     );
 
     managerSelect.innerHTML = '<option value="">Không có người quản lý</option>' +
