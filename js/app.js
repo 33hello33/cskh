@@ -385,6 +385,7 @@ async function load10HoaDonGanNhat(studentId) {
             .from('tbl_hd')
             .select('ngaylap, mahd, hocphi, hinhthuc, ghichu')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
+            .neq('daxoa', 'Đã Xóa')
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
             .limit(10);
 
