@@ -4117,10 +4117,18 @@ async function updateCustomerStatusDirect(customerId, newStatus, oldStatus) {
         const customerData = { ...customer };
         customerData._editorName = currentUser ? currentUser.name : 'Unknown';
 
-        const result = await callGAS(
-                'updateCustomer',customerId, customerData);
+        // 2. Thực hiện lệnh update trong Supabase
+        const dataToUpdate = {
+            status: newStatus,
+            // Bạn có thể thêm thông tin người sửa nếu cần
+            // last_modified_by: currentUser.name 
+        };
+        const { data, error } = await supabaseClient
+            .from('tbl_khachhang') // Tên bảng của bạn
+            .update(dataToUpdate)
+            .eq('id', customerId);
 
-        if (!result.success) {
+        if (errors) {
             // Rollback nếu lỗi
             customer.status = oldStatus === 'Chưa xác định' ? '' : oldStatus;
             if (statusElement) statusElement.value = oldStatus || '';
