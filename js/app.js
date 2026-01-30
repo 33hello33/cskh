@@ -290,7 +290,7 @@ async function getAllRemindersFromSupabase() {
     }
 
     // Chuyển đổi dữ liệu từ database sang định dạng mảng statuses cũ của bạn
-    const customers = data.map(item => ({
+    const reminders = data.map(item => ({
         id: item.id,
         content: item.content,
         dueDate: item.dueDate, 
@@ -300,7 +300,7 @@ async function getAllRemindersFromSupabase() {
          isDone: item.isDone
     }));
 
-    return customers;
+    return reminders;
 }
 
 // Chuyển đổi mode trong Login Modal
