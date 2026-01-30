@@ -638,21 +638,18 @@ function showUserInfo() {
         // Chỉ hiện tên, không hiện chức vụ
         document.getElementById('current-user-name').textContent = currentUser.name;
         document.getElementById('user-info').style.display = 'flex';
-
+        const element = document.getElementById("reports");
+        const reportTab = document.querySelector('.nav-tab[data-tab="reports"]');
+        
         // Add manager class if user is manager
        if (currentUser.role === 'Quản lý' || currentUser.role === 'Nhân viên VP'){
             document.body.classList.add('manager-user');
+            element.style.display = '';
+            reportTab.style.display = '';
         } else {
             document.body.classList.remove('manager-user');
-           const element = document.getElementById("reports");
-            if (element) {
-                element.remove();
-            }
-           
-          const reportTab = document.querySelector('.nav-tab[data-tab="reports"]');
-            if (reportTab) {
-                reportTab.style.display = 'none';
-            }
+            element.style.display = 'none';
+            reportTab.style.display = 'none';
         }
     }
 }
