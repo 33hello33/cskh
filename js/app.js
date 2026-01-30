@@ -1923,30 +1923,12 @@ function renderCustomers() {
         const nextContactDate = lastCare && lastCare.nextContactDate ? formatDate(lastCare.nextContactDate) : '┄';
 
         const careCount = customer.careHistory ? customer.careHistory.length : 0;
-        let careCountBadge = '';
         if (careCount > 0) {
             let badgeClass = 'care-count-low';
             if (careCount >= 6) badgeClass = 'care-count-high';
             else if (careCount >= 3) badgeClass = 'care-count-medium';
-            careCountBadge = `<span class="care-count-badge ${badgeClass}">${careCount}</span>`;
         }
-
-        let orderInfo = { closedDate: '┄', orderCode: '┄', totalValue: 0, orderCount: 0 };
-        if (customer.orders && customer.orders.length > 0) {
-            const latestOrder = customer.orders.sort((a, b) => new Date(b.closedDate) - new Date(a.closedDate))[0];
-            orderInfo.closedDate = formatDate(latestOrder.closedDate);
-            orderInfo.orderCode = latestOrder.orderCode || '┄';
-            orderInfo.totalValue = customer.orders.reduce((sum, order) => sum + (order.orderValue || 0), 0);
-            orderInfo.orderCount = customer.orders.length;
-        }
-
-        const orderValueFormatted = orderInfo.totalValue > 0 ? new Intl.NumberFormat('vi-VN').format(orderInfo.totalValue) : '┄';
-        let orderValueBadge = '';
-        if (orderInfo.orderCount > 1) {
-            orderValueBadge = `<span style="position: absolute; top: -1px; background: #66666691; color: white; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 8px; min-width: 16px; text-align: center;">${orderInfo.orderCount}</span>`;
-        }
-        const orderCodeDisplay = orderInfo.orderCount > 1 ? `${orderInfo.orderCode} (+${orderInfo.orderCount - 1})` : orderInfo.orderCode;
-
+   
         const canEdit = currentUser.isManager || customer.assignedStaff === currentUser.name;
         const canDelete = currentUser.isManager || customer.assignedStaff === currentUser.name;
 
@@ -1960,7 +1942,6 @@ function renderCustomers() {
                         <a href="#" onclick="viewCustomerDetails(${customer.id}); return false;">
                             ${customer.name}
                         </a>
-                        ${careCountBadge}
                     </div>
                 </td>
                 <td>${customer.phone || '┄'}</td>
@@ -1984,9 +1965,6 @@ function renderCustomers() {
                 </td>
                 <td>${customer.assignedStaff || 'Chưa phân công'}</td>
                 <td class="note-cell" title="${customer.notes || ''}">${customer.notes || '┄'}</td>
-                <td class="order-column">${orderInfo.closedDate}</td>
-                <td class="order-column">${orderCodeDisplay}</td>
-                <td style="position: relative;">${orderValueFormatted}${orderValueBadge}</td>
                 <td>${lastCare ? formatDate(lastCare.contactDate) : '┄'}</td>
                 <td style="color: ${nextContactDate !== '┄' ? '#F59E0B' : '#666'}; font-weight: ${nextContactDate !== '┄' ? '600' : 'normal'};">${nextContactDate}</td>
                 <td class="actions">
