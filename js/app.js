@@ -3830,7 +3830,7 @@ async function refreshData() {
         filterCustomers();
         populateDropdowns();
         renderSettingsContent();
-        window.reminders = await getAllRemindersFromSupabase || [];
+        window.reminders = await getAllRemindersFromSupabase() || [];
         
         //setupCustomDateFilter();
 
