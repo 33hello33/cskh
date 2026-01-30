@@ -5115,7 +5115,7 @@ async function saveReminderToSheet() {
 
     if (!content || !date) return alert('Vui lòng nhập đủ thông tin!');
 
-    const dataToUpdate = {
+    const dataToInsert = {
         id: id || null,
         content: content,
         dueDate: date,
@@ -5130,7 +5130,7 @@ async function saveReminderToSheet() {
         // 2. Thực hiện lệnh update trong Supabase
         const { data, error } = await supabaseClient
             .from('tbl_nhacviec')
-            .update(dataToUpdate)
+            .insert([dataToInsert])
         if(error){
             showNotification('Lỗi: ' + e.message, 'error');
             return;
