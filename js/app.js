@@ -93,20 +93,26 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function initApp() {
-  try { showLoginModal();
-/*         document.getElementById('login-modal').style.display = 'none';
-       currentSessionId = localStorage.getItem('currentSessionId');
-
-// THAY THẾ google.script.run:
-        const result = await callGAS('getAllData', currentSessionId );
-
-        if (!result.success) {
-            localStorage.removeItem('currentSessionId');
-            currentSessionId = null;
+  try {
+        document.getElementById('login-modal').style.display = 'none';
+        currentSessionId = localStorage.getItem('currentSessionId');
+      
+        if (!currentSessionId) {
+                console.log("Không tìm thấy session. Yêu cầu đăng nhập.");
+                showLoginModal();
+                return;
+            }
+      
+      // 2. Kiểm tra tính hợp lệ
+        if (isSessionValid(currentSessionId)) {
+            console.log("Chào mừng trở lại!");
+        } else {
+            console.log("Session đã hết hạn hoặc không hợp lệ.");
+            localStorage.removeItem('currentSessionId'); // Dọn dẹp
             showLoginModal();
-            return;
         }
 
+/*
         currentUser = result.user;
         staff = result.staff;
         statuses = result.statuses;
@@ -117,9 +123,10 @@ async function initApp() {
         window.reminders = result.reminders || [];
         renderReminders();
         updateReminderTabBadge();
-
+*/ 
         // -----------------------------------------
-*/
+
+          showLoginModal();
         statuses = await getStatusesFromSupabase();
         sources = await getSourcesFromSupabase();
         staff = await getStaffFromSupabase();
@@ -160,6 +167,25 @@ async function initApp() {
         localStorage.removeItem('currentSessionId');
         currentSessionId = null;
         showLoginModal();
+    }
+}
+
+function isSessionValid(sessionId) {
+    try {
+        // Tách chuỗi: session_MANV_Timestamp
+        const parts = sessionId.split('_');
+        
+        if (parts.length !== 3 || parts[0] !== 'session') {
+            return false;
+        }
+
+        const timestamp = parseInt(parts[2]);
+        const now = Date.now();
+
+        // Kiểm tra nếu timestamp là số hợp lệ và chưa quá hạn
+        return !isNaN(timestamp) && (now - timestamp < SESSION_TIMEOUT);
+    } catch (e) {
+        return false;
     }
 }
 
@@ -525,7 +551,8 @@ async function performLogin() {
 
         hideLoginModal();
         showUserInfo();
-       // initApp(); // Reload app with user permissions
+        
+        initApp(); // Reload app with user permissions
 
     } catch (error) {
         console.error('Lỗi đăng nhập:', error);
