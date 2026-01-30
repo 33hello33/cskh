@@ -3867,8 +3867,8 @@ async function refreshData() {
         populateDropdowns();
         //setupCustomDateFilter();
 
-            window.allHistoryData = result.history || [];
-            window.reminders = result.reminders || [];
+        //    window.allHistoryData = result.history || [];
+       //     window.reminders = result.reminders || [];
             updateReminderTabBadge();
 
             // Cập nhật giao diện các tab khác
