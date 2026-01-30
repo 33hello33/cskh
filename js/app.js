@@ -5129,7 +5129,7 @@ async function saveReminderToSheet() {
     try {
         // 2. Thực hiện lệnh update trong Supabase
         const { data, error } = await supabaseClient
-            .from('tbl_nhacviec)
+            .from('tbl_nhacviec')
             .update(dataToUpdate)
         if(error){
             showNotification('Lỗi: ' + e.message, 'error');
