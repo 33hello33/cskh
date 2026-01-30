@@ -278,6 +278,31 @@ async function getCustomersFromSupabase() {
     return customers;
 }
 
+async function getAllRemindersFromSupabase() {
+    // Giả định bạn đã khởi tạo supabaseClient trước đó
+    const { data, error } = await supabaseClient
+        .from('tbl_nhacviec')
+        .select('*');
+
+    if (error) {
+        console.error('Lỗi khi lấy dữ liệu status:', error.message);
+        return [];
+    }
+
+    // Chuyển đổi dữ liệu từ database sang định dạng mảng statuses cũ của bạn
+    const customers = data.map(item => ({
+        id: item.id,
+        content: item.content,
+        dueDate: item.dueDate, 
+        priority: item.priority,
+        assignTo: item.assignTo,
+         createdBy: item.createdBy,
+         isDone: item.isDone
+    }));
+
+    return customers;
+}
+
 // Chuyển đổi mode trong Login Modal
 function toggleLoginMode(mode) {
     const loginForm = document.getElementById('login-form');
@@ -3805,11 +3830,12 @@ async function refreshData() {
         filterCustomers();
         populateDropdowns();
         renderSettingsContent();
+        window.reminders = await getAllRemindersFromSupabase || [];
         
         //setupCustomDateFilter();
 
         //    window.allHistoryData = result.history || [];
-       //     window.reminders = result.reminders || [];
+            window.reminders = result.reminders || [];
        //     updateReminderTabBadge();
 
             const reportsTab = document.getElementById('reports');
@@ -5089,7 +5115,7 @@ async function saveReminderToSheet() {
 
     if (!content || !date) return alert('Vui lòng nhập đủ thông tin!');
 
-    const data = {
+    const dataToUpdate = {
         id: id || null,
         content: content,
         dueDate: date,
@@ -5101,7 +5127,14 @@ async function saveReminderToSheet() {
 
     showButtonLoading('#reminder-modal .btn-success', 'Đang lưu...');
     try {
-        await callGAS('saveReminder',data);
+        // 2. Thực hiện lệnh update trong Supabase
+        const { data, error } = await supabaseClient
+            .from('tbl_nhacviec)
+            .update(dataToUpdate)
+        if(error){
+            showNotification('Lỗi: ' + e.message, 'error');
+            return;
+        }
 
         closeModal();
         showNotification('Đã lưu công việc!');
