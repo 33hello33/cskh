@@ -1292,7 +1292,9 @@ async function renderCocaudoanhthulopChart() {
                 .from('tbl_billhanghoa')
                 .select(`
                     dadong,
-                    tbl_hv!inner( malop(tenlop) ) 
+                    tbl_hv!tbl_billhanghoa_mahv_fkey!inner (
+                    tenhv,
+                    malop (tenlop))
                 `)
                 .neq('daxoa', 'Đã Xóa')
         ]);
@@ -1408,7 +1410,9 @@ async function renderThongkenolopChart() {
                 .from('tbl_billhanghoa')
                 .select(`
                     conno,
-                    tbl_hv!inner( malop(tenlop) )
+                    tbl_hv!tbl_billhanghoa_mahv_fkey!inner (
+                    tenhv,
+                    malop (tenlop))
                 `)
                 .neq('daxoa', 'Đã Xóa')
                 .gt('conno', 0)
