@@ -108,6 +108,18 @@ async function initApp() {
       // 2. Kiểm tra tính hợp lệ
         if (isSessionValid(currentSessionId)) {
             console.log("Chào mừng trở lại!");
+            
+            // LẤY DỮ LIỆU TỪ LOCALSTORAGE:
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser); // Chuyển chuỗi JSON thành Object
+                showUserInfo(); // Hiển thị tên user lên giao diện
+                refreshData();  // Tải dữ liệu app
+            } else {
+                // Nếu có session mà không có dữ liệu user thì cũng bắt đăng nhập lại cho chắc
+                showLoginModal();
+            }
+            
         } else {
             console.log("Session đã hết hạn hoặc không hợp lệ.");
             localStorage.removeItem('currentSessionId'); // Dọn dẹp
@@ -532,7 +544,10 @@ async function performLogin() {
         
         // Lưu sessionId vào localStorage
         localStorage.setItem('currentSessionId', currentSessionId);
-
+        
+        // Lưu object user dưới dạng chuỗi JSON
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        
         hideLoginModal();
         showUserInfo();
         // initApp(); <-- Bỏ dòng này
