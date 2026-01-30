@@ -4119,9 +4119,7 @@ async function updateCustomerStatusDirect(customerId, newStatus, oldStatus) {
 
         // 2. Thực hiện lệnh update trong Supabase
         const dataToUpdate = {
-            status: newStatus,
-            // Bạn có thể thêm thông tin người sửa nếu cần
-            // last_modified_by: currentUser.name 
+            status: newStatus
         };
         const { data, error } = await supabaseClient
             .from('tbl_khachhang') // Tên bảng của bạn
