@@ -2166,40 +2166,6 @@ function showAddCustomerModal() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('customer-created-date').value = today;
 
-    // RESET closed fields về trạng thái ban đầu
-    const closedFields = document.getElementById('closed-fields');
-    closedFields.innerHTML = `
-        <div class="form-group" style="display: flex; gap: 15px;">
-            <div style="flex: 1;">
-                <label for="customer-closed-date">Ngày chốt <span class="required-star">*</span></label>
-                <input type="date" 
-                      id="customer-closed-date" 
-                      name="closedDate" 
-                      class="form-control" 
-                      required>
-            </div>
-            <div style="flex: 1;">
-                <label for="customer-order-code">Mã đơn hàng</label>
-                <input type="text" 
-                      id="customer-order-code" 
-                      name="orderCode" 
-                      class="form-control" 
-                      placeholder="Nhập mã đơn hàng">
-            </div>
-            <div style="flex: 1;">
-                <label for="customer-order-value">Giá trị đơn hàng <span class="required-star">*</span></label>
-                <input type="text" 
-                      id="customer-order-value" 
-                      name="orderValue" 
-                      class="form-control" 
-                      placeholder="Nhập giá trị đơn hàng"
-                      oninput="formatOrderValue(this)"
-                      required>
-            </div>
-        </div>
-    `;
-    closedFields.style.display = 'none'; // Ẩn mặc định
-
     document.getElementById('customer-modal-title').textContent = 'Thêm khách hàng mới';
     populateDropdowns();
 
