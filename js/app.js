@@ -126,7 +126,6 @@ async function initApp() {
 */ 
         // -----------------------------------------
 
-          showLoginModal();
         statuses = await getStatusesFromSupabase();
         sources = await getSourcesFromSupabase();
         staff = await getStaffFromSupabase();
