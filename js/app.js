@@ -5115,8 +5115,8 @@ async function saveReminderToSheet() {
 
     if (!content || !date) return alert('Vui lòng nhập đủ thông tin!');
 
-    const dataToInsert = {
-        id: id || null,
+    // 1. Tạo object dữ liệu (KHÔNG bao gồm ID ở đây)
+    const payload = {
         content: content,
         dueDate: date,
         priority: priority,
@@ -5126,28 +5126,42 @@ async function saveReminderToSheet() {
     };
 
     showButtonLoading('#reminder-modal .btn-success', 'Đang lưu...');
+    
     try {
-        // 2. Thực hiện lệnh update trong Supabase
-        const { data, error } = await supabaseClient
-            .from('tbl_nhacviec')
-            .insert([dataToInsert])
-        if(error){
-            showNotification('Lỗi: ' + e.message, 'error');
+        let result;
+
+        if (id) {
+            // TRƯỜNG HỢP UPDATE: Có ID thì cập nhật dòng đó
+            result = await supabaseClient
+                .from('tbl_nhacviec')
+                .update(payload)
+                .eq('id', id);
+        } else {
+            // TRƯỜNG HỢP INSERT: Không có ID thì tạo mới
+            // Lưu ý: Tuyệt đối không gửi trường 'id' để DB tự sinh
+            result = await supabaseClient
+                .from('tbl_nhacviec')
+                .insert([payload]);
+        }
+
+        if (result.error) {
+            showNotification('Lỗi: ' + result.error.message, 'error');
             return;
         }
 
+        // Hoàn tất
         closeModal();
-        showNotification('Đã lưu công việc!');
-        await refreshData(); // Load lại để lấy ID mới và cập nhật list
-        // Chuyển sang tab Nhắc việc nếu đang ở tab khác
+        showNotification('Đã lưu công việc thành công!');
+        await refreshData(); 
+        
         if (!document.querySelector('.nav-tab[data-tab="reminders"]').classList.contains('active')) {
              switchTab('reminders');
         } else {
              renderReminders();
         }
 
-    } catch(e) {
-        showNotification('Lỗi: ' + e.message, 'error');
+    } catch (e) {
+        showNotification('Lỗi hệ thống: ' + e.message, 'error');
     } finally {
         hideButtonLoading('#reminder-modal .btn-success');
     }
