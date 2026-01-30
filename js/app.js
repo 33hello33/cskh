@@ -2567,13 +2567,12 @@ window.deleteCustomer = async function(customerId, btn) {
     // ---------------------------------
 
     try {
-        const result = await callGAS(
-        'deleteCustomer', 
-        customerId, 
-        currentUser ? currentUser.name : 'Unknown'
-    );
+     const { data, error } = await supabaseClient
+            .from('tbl_khachhang') // Tên bảng khách hàng của bạn
+            .delete()
+            .eq('id', customerId); // Lọc đúng ID cần xóa
 
-        if (result.success) {
+        if (error) {
             showNotification('Xóa khách hàng thành công!');
             await refreshData();
         } else {
