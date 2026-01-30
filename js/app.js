@@ -4126,7 +4126,7 @@ async function updateCustomerStatusDirect(customerId, newStatus, oldStatus) {
             .update(dataToUpdate)
             .eq('id', customerId);
 
-        if (errors) {
+        if (error) {
             // Rollback nếu lỗi
             customer.status = oldStatus === 'Chưa xác định' ? '' : oldStatus;
             if (statusElement) statusElement.value = oldStatus || '';
