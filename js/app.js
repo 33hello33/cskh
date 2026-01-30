@@ -2572,11 +2572,11 @@ window.deleteCustomer = async function(customerId, btn) {
             .delete()
             .eq('id', customerId); // Lọc đúng ID cần xóa
 
-        if (error) {
+        if (!error) {
             showNotification('Xóa khách hàng thành công!');
             await refreshData();
         } else {
-            showNotification('Lỗi: ' + result.error, 'error');
+            showNotification('Lỗi: ' + error, 'error');
             // Restore nút nếu lỗi
             if (btn) { btn.innerHTML = originalIcon; btn.disabled = false; }
         }
