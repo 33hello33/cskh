@@ -338,7 +338,7 @@ async function loadLatestFeeNotification(studentId) {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
         const { data, error } = await supabaseClient
             .from('tbl_thongbao')
-            .select('hocphi, giamhocphi,ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu')
+            .select('hocphi, giamhocphi, toncong, ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
             .limit(1)
@@ -357,6 +357,9 @@ async function loadLatestFeeNotification(studentId) {
             // 2. Xử lý số tiền giảm học phí (định dạng VND)
             document.getElementById('fee-discount-amount').innerText = data.giamhocphi;
 
+            // 2. Xử lý số tiền tổng học phí cần đóng  (định dạng VND)
+            document.getElementById('fee-total-amount').innerText = data.tongcong;
+            
             // 3. Tính Hạn đóng = ngaylap + 10 ngày
             const ngayLap = new Date(data.ngaylap);
             document.getElementById('fee-createdate').innerText = ngayLap.toLocaleDateString('vi-VN'); // Định dạng dd/mm/yyyy
@@ -383,7 +386,7 @@ async function load10HoaDonGanNhat(studentId) {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
         const { data: invoices, error } = await supabaseClient
             .from('tbl_hd')
-            .select('ngaylap, mahd, hocphi, hinhthuc, ghichu')
+            .select('ngaylap, tenlop, ngaybatdau, ngayketthuc, tongcong, dadong, hinhthuc, ghichu')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .neq('daxoa', 'Đã Xóa')
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
@@ -404,15 +407,21 @@ async function load10HoaDonGanNhat(studentId) {
         
                 // Định dạng các giá trị
                 const ngaylap = item.ngaylap ? new Date(item.ngaylap).toLocaleDateString('vi-VN') : '-';
-                const hocphi = item.hocphi ? item.hocphi.toLocaleString('vi-VN') + " đ" : "0 đ";
+                const tenlop = item.tenlop || "-";
+                const ngaybatdau = item.ngaybatdau ? new Date(item.ngaybatdau).toLocaleDateString('vi-VN') : '-';
+                const ngayketthuc = item.ngayketthuc ? new Date(item.ngaylap).toLocaleDateString('vi-VN') : '-';
+                const tongcong = item.tongcong ? item.tongcong.toLocaleString('vi-VN') + " đ" : "0 đ";
+                const dadong = item.dadong ? item.dadong.toLocaleString('vi-VN') + " đ" : "0 đ";
                 const hinhThuc = item.hinhthuc || "-";
                 const ghiChu = item.ghichu || "";
-                const maHD = item.mahd || "N/A";
         
                 row.innerHTML = `
                     <td>${ngaylap}</td>
-                    <td style="font-weight: bold; color: #007bff;">${maHD}</td>
-                    <td style="color: #28a745; font-weight: bold;">${hocphi}</td>
+                    <td style="font-weight: bold; color: #007bff;">${tenlop}</td>
+                    <td>${ngaybatdau}</td>
+                    <td>${ngayketthuc}</td>
+                    <td style="color: #28a745; font-weight: bold;">${tongcong}</td>
+                    <td style="color: #28a745; font-weight: bold;">${dadong}</td>
                     <td>${hinhThuc}</td>
                     <td style="font-size: 0.9em; font-style: italic;">${ghiChu}</td>
                 `;
