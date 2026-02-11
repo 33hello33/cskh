@@ -413,7 +413,7 @@ async function load10HoaDonGanNhat(studentId) {
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .neq('daxoa', 'Đã Xóa')
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
-            .limit(10);
+            .limit(1);
 
         if (error) {
             console.error("Lỗi lấy lịch sử học phí:", error.message);
