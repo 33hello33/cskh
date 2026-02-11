@@ -333,6 +333,13 @@ function toggleLoginMode(mode) {
     }
 }
 
+function formatMonthYear(dateStr) {
+  const d = new Date(dateStr);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${mm}/${yyyy}`;
+}
+
 async function loadLatestFeeNotification(studentId) {
     try {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
@@ -376,6 +383,22 @@ async function loadLatestFeeNotification(studentId) {
             
             // 6. Ghi chú
             document.getElementById('fee-note').innerText = data.ghichu || "Không có ghi chú";
+
+            // 7. Build QR Chuyển khoản
+            const amount = data.tongcong; // số tiền
+            const mahv = studentId;
+            const thangHoc = formatMonthYear(data.ngaybatdau);
+            const addInfo = `${mahv} Dong HP Thang ${thangHoc}`;
+            
+            const qrUrl = `https://img.vietqr.io/image/ACB-35271647-compact2.png` +
+              `?amount=${encodeURIComponent(amount)}` +
+              `&addInfo=${encodeURIComponent(addInfo)}` +
+              `&accountName=${encodeURIComponent("NGUYEN TUAN TU")}`;
+            const img = document.getElementById("qr-payment");
+            if (img) {
+              img.src = qrUrl;
+            }
+            
         }
     } catch (err) {
         console.error("Lỗi hệ thống:", err);
