@@ -753,7 +753,7 @@
                 <button class="close">&times;</button>
             </div>
             
-            <div  class="card-grid">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
                 <!-- Staff List -->
                 <div>
                     <h3 class="mb-3"><i class="fas fa-users"></i> Danh sách nhân viên</h3>
@@ -1189,7 +1189,7 @@
     </div>
 
     <div id="fee-tab" class="parent-tab-content active">
-        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 20px;">
+        <div class="card-grid">
             <div class="glass-card" style="background: rgba(59, 130, 246, 0.1);">
                 <h3><i class="fas fa-bell"></i> Thông báo học phí gần nhất</h3>
                 <div id="latest-fee-info" style="font-size: 1.1em; line-height: 1.8;">
