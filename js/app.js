@@ -385,7 +385,7 @@ async function loadLatestFeeNotification(studentId) {
             document.getElementById('fee-note').innerText = data.ghichu || "Không có ghi chú";
 
             // 7. Build QR Chuyển khoản
-            const amount = data.tongcong; // số tiền
+            const amount = (data.tongcong || "0").replace(/,/g, ""); // số tiền
             const mahv = studentId;
             const thangHoc = formatMonthYear(data.ngaybatdau);
             const addInfo = `${mahv} Dong HP Thang ${thangHoc}`;
