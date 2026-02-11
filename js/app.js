@@ -338,7 +338,7 @@ async function loadLatestFeeNotification(studentId) {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
         const { data, error } = await supabaseClient
             .from('tbl_thongbao')
-            .select('hocphi, giamhocphi, toncong, ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu')
+            .select('hocphi, giamhocphi, tongcong, ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
             .limit(1)
