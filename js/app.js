@@ -345,7 +345,7 @@ async function loadLatestFeeNotification(studentId) {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
         const { data, error } = await supabaseClient
             .from('tbl_thongbao')
-            .select('hocphi, giamhocphi, tongcong, ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu')
+            .select('hocphi, giamhocphi, tongcong, ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu, sobuoihoc, phuphi')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
             .limit(1)
@@ -398,7 +398,12 @@ async function loadLatestFeeNotification(studentId) {
             if (img) {
               img.src = qrUrl;
             }
+
+            // 8. số buổi học
+              document.getElementById('sobuoihoc').innerText = data.sobuoihoc || "0";
             
+            // 9. số buổi vắng KP
+              document.getElementById('sobuoivangKP').innerText = data.phuphi || "0";
         }
     } catch (err) {
         console.error("Lỗi hệ thống:", err);
@@ -518,7 +523,7 @@ async function performTraCuu() {
    // Lấy dữ liệu từ Supabase
     const { data, error } = await supabaseClient
         .from('tbl_hv') // Tên bảng trên Supabase
-        .select('*')       // Lấy tất cả các cột
+        .select(` *, tbl_lop (tenlop)`)       // Lấy tất cả các cột
         .eq('mahv', studentId) // Điều kiện: mã học sinh bằng studentId
         .single();         // Chỉ lấy 1 kết quả duy nhất
 
@@ -542,7 +547,7 @@ async function performTraCuu() {
     if (parentDashboard) {
         parentDashboard.style.display = 'block';
         // Hiển thị tên học sinh (giả định)
-        document.getElementById('display-student-name').innerText = studentId + ': ' + data.tenhv ;
+        document.getElementById('display-student-name').innerText = studentId + ': ' + data.tenhv + ' - Lớp: ' + data?.tbl_lop?.tenlop;
 
         // Gọi hàm load dữ liệu học phí
         await loadLatestFeeNotification(studentId);
