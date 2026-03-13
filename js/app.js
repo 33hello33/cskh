@@ -345,7 +345,7 @@ async function loadLatestFeeNotification(studentId) {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
         const { data, error } = await supabaseClient
             .from('tbl_thongbao')
-            .select('hocphi, giamhocphi, tongcong, ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu, sobuoihoc, phuphi')
+            .select('hocphi, giamhocphi, ngaybatdau, ngayketthuc, sobuoihoc, ngaylap, ghichu, sobuoihoc, phuphi')
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
             .limit(1)
@@ -365,7 +365,10 @@ async function loadLatestFeeNotification(studentId) {
             document.getElementById('fee-discount-amount').innerText = data.giamhocphi;
 
             // 2. Xử lý số tiền tổng học phí cần đóng  (định dạng VND)
-            document.getElementById('fee-total-amount').innerText = data.tongcong;
+            let hocphi = Number(data.hocphi.replace(/,/g, ""));
+            let giam = Number(data.giamhocphi.replace(/,/g, ""));
+            let tongcong = hocphi + giam;
+            document.getElementById('fee-total-amount').innerText = tongcong;
             
             // 3. Tính Hạn đóng = ngaylap + 10 ngày
             const ngayLap = new Date(data.ngaylap);
