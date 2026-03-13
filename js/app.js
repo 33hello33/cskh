@@ -388,15 +388,15 @@ async function loadLatestFeeNotification(studentId) {
             document.getElementById('fee-note').innerText = data.ghichu || "Không có ghi chú";
 
             // 7. Build QR Chuyển khoản
-            const amount = (data.tongcong || "0").replace(/,/g, ""); // số tiền
+            const amount = tongcong;// (tongcong || "0").replace(/,/g, ""); // số tiền
             const mahv = studentId;
             const thangHoc = formatMonthYear(data.ngaybatdau);
             const addInfo = `${mahv} Dong HP Thang ${thangHoc}`;
             
-            const qrUrl = `https://img.vietqr.io/image/ACB-35271647-compact2.png` +
+            const qrUrl = `https://img.vietqr.io/image/TCB-19135282655016-compact2.png` +
               `?amount=${encodeURIComponent(amount)}` +
               `&addInfo=${encodeURIComponent(addInfo)}` +
-              `&accountName=${encodeURIComponent("NGUYEN TUAN TU")}`;
+              `&accountName=${encodeURIComponent("TON THAT HIEU KHOA")}`;
             const img = document.getElementById("qr-payment");
             if (img) {
               img.src = qrUrl;
