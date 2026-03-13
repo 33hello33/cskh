@@ -367,8 +367,8 @@ async function loadLatestFeeNotification(studentId) {
             // 2. Xử lý số tiền tổng học phí cần đóng  (định dạng VND)
             let hocphi = Number(data.hocphi.replace(/,/g, ""));
             let giam = Number(data.giamhocphi.replace(/,/g, ""));
-            let tongcong = hocphi + giam;
-            document.getElementById('fee-total-amount').innerText = tongcong;
+            let tongcong = hocphi - giam;
+            document.getElementById('fee-total-amount').innerText = tongcong.toLocaleString("en-US");;
             
             // 3. Tính Hạn đóng = ngaylap + 10 ngày
             const ngayLap = new Date(data.ngaylap);
