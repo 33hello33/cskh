@@ -349,7 +349,7 @@ async function loadLatestFeeNotification(studentId) {
             .eq('mahv', studentId) // Giả định cột liên kết là student_id
             .order('ngaylap', { ascending: false }) // Lấy ngày mới nhất
             .limit(1)
-            .single();
+            .maybeSingle();
 
         if (error) {
             console.error("Lỗi lấy thông báo:", error.message);
@@ -528,7 +528,7 @@ async function performTraCuu() {
         .from('tbl_hv') // Tên bảng trên Supabase
         .select(` *, tbl_lop (tenlop)`)       // Lấy tất cả các cột
         .eq('mahv', studentId) // Điều kiện: mã học sinh bằng studentId
-        .single();         // Chỉ lấy 1 kết quả duy nhất
+        .maybeSingle();         // Chỉ lấy 1 kết quả duy nhất
 
     if (error) {
         console.error("Lỗi lấy dữ liệu:", error.message);
@@ -590,7 +590,7 @@ async function performLogin() {
             .select('manv, tennv, username, role, password')
             .eq('username', username)
             .eq('password', password) // Lưu ý: Nên mã hóa password nếu làm hệ thống lớn
-            .single(); // Lấy 1 bản ghi duy nhất
+             .maybeSingle(); // Lấy 1 bản ghi duy nhất
 
         if (error || !user) {
             console.error("Lỗi login:", error);
