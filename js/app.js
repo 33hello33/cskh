@@ -354,14 +354,14 @@ async function loadInfoChuyenMon(studentId) {
     }
 
         if (hv) {
-            document.getElementById('info-mahv').innerText = data.mahv;
-             document.getElementById('info-tenhv').innerText = data.tenhv;
-             document.getElementById('info-ngaysinh').innerText = data.ngaysinh;
-             document.getElementById('info-chanthuan').innerText = data.chanthuan;
-             document.getElementById('info-chieucao').innerText = data.chieucao;
-             document.getElementById('info-cannang').innerText = data.cannang;
-             document.getElementById('info-imgpath').innerText = data.imgpath;
-             document.getElementById(' info-lop').innerText = data?.tbl_lop?.tenlop;
+            document.getElementById('info-mahv').innerText = hv.mahv;
+             document.getElementById('info-tenhv').innerText = hv.tenhv;
+             document.getElementById('info-ngaysinh').innerText = hv.ngaysinh;
+             document.getElementById('info-chanthuan').innerText = hv.chanthuan;
+             document.getElementById('info-chieucao').innerText = hv.chieucao;
+             document.getElementById('info-cannang').innerText = hv.cannang;
+             document.getElementById('info-imgpath').innerText = hv.imgpath;
+             document.getElementById(' info-lop').innerText = hv?.tbl_lop?.tenlop;
         }
     
     // 2. Lấy thông số chuyên môn
