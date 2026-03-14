@@ -360,7 +360,7 @@ async function loadInfoChuyenMon(studentId) {
              document.getElementById('info-chanthuan').innerText = hv.chanthuan;
              document.getElementById('info-chieucao').innerText = hv.chieucao;
              document.getElementById('info-cannang').innerText = hv.cannang;
-             document.getElementById('info-imgpath').innerText = hv.imgpath;
+             document.getElementById('info-imgpath').src = hv.imgpath;
              document.getElementById('info-lop').innerText = hv?.tbl_lop?.tenlop;
         }
     
