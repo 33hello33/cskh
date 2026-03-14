@@ -340,6 +340,46 @@ function formatMonthYear(dateStr) {
   return `${mm}/${yyyy}`;
 }
 
+async function loadInfoChuyenMon(studentId) {
+    // 1. Lấy thông tin học viên
+    const { data: hv, error: hvError } = await supabaseClient
+        .from('tbl_hv')
+        .select('mahv, tenhv, ngaysinh, malop, chanthuan, chieucao, cannang, imgpath, tbl_lop (tenlop)')
+        .eq('mahv', studentId)
+        .maybeSingle();
+
+    if (hvError) {
+        console.error("Lỗi tbl_hv:", hvError);
+        return null;
+    }
+
+        if (hv) {
+            document.getElementById('info-mahv').innerText = data.mahv;
+             document.getElementById('info-tenhv').innerText = data.tenhv;
+             document.getElementById('info-ngaysinh').innerText = data.ngaysinh;
+             document.getElementById('info-chanthuan').innerText = data.chanthuan;
+             document.getElementById('info-chieucao').innerText = data.chieucao;
+             document.getElementById('info-cannang').innerText = data.cannang;
+             document.getElementById('info-imgpath').innerText = data.imgpath;
+             document.getElementById(' info-lop').innerText = data?.tbl_lop?.tenlop;
+        }
+    
+    // 2. Lấy thông số chuyên môn
+    const { data: stats, error: statsError } = await supabaseClient
+        .from('tbl_thongsochuyenmon')
+        .select('*')
+        .eq('mahv', studentId)
+        .maybeSingle();
+
+    if (statsError) {
+        console.error("Lỗi tbl_thongsochuyenmon:", statsError);
+    }
+
+        if (stats) {
+            
+        }
+}
+
 async function loadLatestFeeNotification(studentId) {
     try {
         // Truy vấn dòng mới nhất từ bảng tbl_thongbao của học sinh đó
@@ -550,9 +590,11 @@ async function performTraCuu() {
     if (parentDashboard) {
         parentDashboard.style.display = 'block';
         // Hiển thị tên học sinh (giả định)
-        document.getElementById('display-student-name').innerText = studentId + ': ' + data.tenhv + ' - Lớp: ' + data?.tbl_lop?.tenlop;
+        //document.getElementById('display-student-name').innerText = studentId + ': ' + data.tenhv + ' - Lớp: ' + data?.tbl_lop?.tenlop;
 
         // Gọi hàm load dữ liệu học phí
+        await loadInfoChuyenMon(studentId);
+        
         await loadLatestFeeNotification(studentId);
 
         await load10HoaDonGanNhat(studentId);
