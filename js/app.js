@@ -1,8 +1,8 @@
 //   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfObJiGRrjA749EIM230loYjVbFy7oNsGhr-sXXjdzt3EWjuQSdbWI-WOhyiv-czFXSw/exec";
 
 // Khai báo thông tin dự án Supabase
-const SUPABASE_URL = 'https://tmsovasxendjqipqfmqi.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtc292YXN4ZW5kanFpcHFmbXFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNDkzOTMsImV4cCI6MjA4NTgyNTM5M30.Rcj00LN7_vkmR9eiFlF2uE9SqDeJgQomIca0FDrD9Vc';
+const SUPABASE_URL = 'https://oseiezqbuqowflnyivor.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZWllenFidXFvd2Zsbnlpdm9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTM0NzcsImV4cCI6MjA4ODcyOTQ3N30.yYaCn2DvPsb33Q3tkqP20o-_j5z9Y5bm4bgWoAzfcoU';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 giờ
