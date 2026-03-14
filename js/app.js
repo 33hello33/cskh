@@ -361,7 +361,7 @@ async function loadInfoChuyenMon(studentId) {
              document.getElementById('info-chieucao').innerText = hv.chieucao;
              document.getElementById('info-cannang').innerText = hv.cannang;
              document.getElementById('info-imgpath').innerText = hv.imgpath;
-             document.getElementById(' info-lop').innerText = hv?.tbl_lop?.tenlop;
+             document.getElementById('info-lop').innerText = hv?.tbl_lop?.tenlop;
         }
     
     // 2. Lấy thông số chuyên môn
