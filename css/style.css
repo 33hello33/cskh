@@ -1752,7 +1752,39 @@ font-size:20px;
 color:#38bdf8;
 
 }
+.physical-grid{
 
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+margin-top:10px;
+
+}
+
+.p-stat{
+
+background:#020617;
+border:1px solid rgba(56,189,248,0.5);
+border-radius:8px;
+padding:15px;
+text-align:center;
+
+}
+
+.p-stat b{
+
+font-size:24px;
+color:#38bdf8;
+display:block;
+
+}
+
+.p-stat span{
+
+font-size:12px;
+color:#94a3b8;
+
+}
 @media(max-width:768px){
 
 .player-header{
@@ -1766,6 +1798,7 @@ grid-template-columns:1fr;
 }
 
 .stats-section{
+  display:flex;
 flex-direction:column;
 }
 
