@@ -1609,17 +1609,6 @@ body{
     border-radius:6px;
 }
 
-/* stats */
-
-.player-stats{
-    margin-top:30px;
-}
-
-.player-stats h3{
-    font-size:20px;
-    color:#93c5fd;
-    margin-bottom:15px;
-}
 
 /* stats layout */
 
@@ -1658,6 +1647,110 @@ transition:0.3s;
 .stats-box:hover{
 transform:translateY(-6px);
 box-shadow:0 15px 30px rgba(0,0,0,0.6);
+}
+
+.player-hero{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+background:linear-gradient(135deg,#020617,#0f172a);
+padding:40px;
+border-radius:12px;
+
+color:white;
+}
+
+/* tên cầu thủ */
+
+.player-left h1{
+
+font-size:48px;
+margin-bottom:25px;
+font-weight:800;
+letter-spacing:2px;
+
+}
+
+
+/* info */
+
+.hero-info{
+
+width:420px;
+
+}
+
+.hero-row{
+
+margin-bottom:14px;
+border-bottom:1px solid rgba(56,189,248,0.5);
+padding-bottom:6px;
+
+}
+
+.hero-row span{
+
+font-size:12px;
+color:#94a3b8;
+
+}
+
+.hero-row p{
+
+margin:2px 0;
+font-size:16px;
+font-weight:600;
+
+}
+
+
+/* avatar */
+
+.player-right img{
+
+height:340px;
+object-fit:cover;
+border-radius:10px;
+
+}
+
+
+/* stats */
+
+.match-stats{
+
+display:flex;
+gap:15px;
+margin-top:30px;
+
+}
+
+.stat-box{
+
+background:#020617;
+border:1px solid rgba(56,189,248,0.5);
+padding:10px 16px;
+border-radius:6px;
+text-align:center;
+min-width:70px;
+
+}
+
+.stat-box small{
+
+display:block;
+font-size:11px;
+color:#94a3b8;
+
+}
+
+.stat-box b{
+
+font-size:20px;
+color:#38bdf8;
+
 }
 
 @media(max-width:768px){
