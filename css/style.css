@@ -1556,9 +1556,18 @@ body{
 /* header */
 
 .player-header{
-    display:flex;
-    gap:30px;
-    align-items:center;
+    position:relative;
+}
+
+.player-header::after{
+    content:"PLAYER";
+    position:absolute;
+    font-size:120px;
+    font-weight:800;
+    color:rgba(255,255,255,0.03);
+    left:220px;
+    top:-20px;
+    pointer-events:none;
 }
 
 /* ảnh */
