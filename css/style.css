@@ -237,7 +237,7 @@ body.login-blur .container {
 
 
 .modal-content {
-    background: white;
+    background: linear-gradient(135deg,#020617,#0f172a);
     border-radius: 8px;
     padding: 24px;
     max-width: 650px;
