@@ -1136,6 +1136,8 @@ async function renderCocauthuchiChart() {
         const formatter = new Intl.NumberFormat('vi-VN');
 
         // 4. Khởi tạo biểu đồ
+        Chart.defaults.color = "#ffffff";
+        Chart.defaults.borderColor = "rgba(255,255,255,0.15)";
         window.cocauthuchiChart = new Chart(ctx, {
             type: 'pie',
             data: {
