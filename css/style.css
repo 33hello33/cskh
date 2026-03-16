@@ -1805,3 +1805,37 @@ padding:18px;
 }
 
 }
+@media (max-width: 768px){
+
+.player-hero{
+    flex-direction: column;   /* xếp dọc */
+    align-items: center;
+    text-align:center;
+}
+
+/* avatar lên trên */
+.player-right{
+    order:1;
+    margin-bottom:20px;
+}
+
+/* info xuống dưới */
+.player-left{
+    order:2;
+    width:100%;
+}
+.player-left h1{
+    font-size:32px;
+}
+/* avatar mobile */
+.player-right img{
+    height:220px;
+    width:auto;
+}
+
+/* tránh bị tràn */
+.hero-info{
+    width:100%;
+}
+
+}
