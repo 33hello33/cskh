@@ -8,7 +8,7 @@
   --light: #F3F4F6;        /* Màu nền sáng mới */
   --dark: #1E293B;         /* Màu chữ đậm hơn */
   --background: #F1F5F9;   /* Màu nền xám lạnh */
-  --text: #334155;         /* Màu chữ xám đen */
+  --text: #FFFFFF;         /* Màu chữ xám đen */
   --border: #E2E8F0;       /* Viền nhạt */
   --card-bg: #FFFFFF;      /* Nền trắng tinh */
   --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
