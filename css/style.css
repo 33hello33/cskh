@@ -69,7 +69,7 @@ body {
   display: flex;
   justify-content: center;
   margin: 0 auto 15px auto;
-  background: #FFFFFF;
+  background: linear-gradient(135deg,#020617,#0f172a);
   padding: 5px;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -82,7 +82,6 @@ body {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  color: #64748B;
   transition: all 0.2s ease;
   border: none;
   display: flex;
