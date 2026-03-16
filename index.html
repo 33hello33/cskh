@@ -39,9 +39,7 @@
 
         <!-- Navigation -->
         <div class="nav-tabs">
-            <div class="nav-tab active" data-tab="customers">
-             <i class="fas fa-users"></i> Chăm sóc khách hàng
-            </div>
+
             <div class="nav-tab" data-tab="reports">
                 <i class="fas fa-chart-bar"></i> Báo cáo
             </div>
@@ -62,140 +60,7 @@
 
         <!-- Main Content -->
         <div class="glass-card">
-            <!-- Customers Section -->
-     
-            <div id="customers" class="content-section active">
-                
-                <div id="status-tabs-container" class="status-tabs-wrapper">
-                    </div>
 
-                <div class="filter-controls">
-                    
-                    <button class="toggle-columns-btn" onclick="toggleOrderColumns()" id="toggle-order-btn">
-                        <i class="fas fa-eye-slash"></i> Ẩn cột
-                    </button>
-                    
-                    <input type="text" 
-                          id="search-input" 
-                          class="form-control search-input" 
-                          placeholder="Tìm kiếm từ khoá...">
-                    
-                    <select id="staff-filter" class="form-control filter-select">
-                        <option value="">Tất cả nhân viên</option>
-                    </select>
-                    
-                    <div style="display: flex; align-items: center;">
-                        <select id="date-filter" class="form-control filter-select">
-                            <option value="all">Tất cả thời gian</option>
-                            <option value="today">Hôm nay</option>
-                            <option value="thisMonth" selected>Tháng này</option>
-                            <option value="lastMonth">Tháng trước</option>
-                            <option value="custom">📅 Tự chọn...</option> 
-                        </select>
-                        
-                        <input type="text" id="custom-date-picker" class="form-control filter-select" 
-                              style="display: none; min-width: 180px; background: #fff;" 
-                              placeholder="Chọn khoảng ngày...">
-                    </div>
-                    
-                    <button class="btn btn-secondary" onclick="resetCustomerFilters()" style="margin-left: 5px; height: 36px;">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <div class="care-needed-filter">
-                        <label class="checkbox-label">
-                            <input type="checkbox" 
-                                  id="care-needed-checkbox" 
-                                  class="care-needed-checkbox">
-                            <span>Cần chăm 7 ngày tới</span>
-                        </label>
-                    </div>
-                    
-                    <button class="btn btn-success" onclick="showAddCustomerModal()">
-                        <i class="fas fa-plus"></i> Thêm
-                    </button>
-                </div>
-                <!-- Table View - GIỮ NGUYÊN -->
-                   <div id="table-view" class="table-container" style="display: block;">
-                  <table class="data-table">
-                      <thead>
-                        <tr>
-                            <th onclick="sortTable('id')" style="cursor: pointer; width: 50px;">
-                                ID <i class="fas fa-sort" id="sort-id"></i>
-                            </th>
-                            
-                            <th onclick="sortTable('createdDate')" style="cursor: pointer;">
-                                Ngày tạo <i class="fas fa-sort" id="sort-createdDate"></i>
-                            </th>
-                            <th onclick="sortTable('name')" style="cursor: pointer;">
-                                Tên <i class="fas fa-sort" id="sort-name"></i>
-                            </th>
-                            <th onclick="sortTable('phone')" style="cursor: pointer;">
-                                Điện thoại <i class="fas fa-sort" id="sort-phone"></i>
-                            </th>
-                            <th onclick="sortTable('source')" style="cursor: pointer;">
-                                Nguồn <i class="fas fa-sort" id="sort-source"></i>
-                            </th>
-                            <th onclick="sortTable('status')" style="cursor: pointer;">
-                                Trạng thái <i class="fas fa-sort" id="sort-status"></i>
-                            </th>
-                            <th onclick="sortTable('assignedStaff')" style="cursor: pointer;">
-                                Phụ trách <i class="fas fa-sort" id="sort-assignedStaff"></i>
-                            </th>
-                            <th onclick="sortTable('notes')" style="cursor: pointer;">
-                                Ghi chú <i class="fas fa-sort" id="sort-notes"></i>
-                            </th>
-                            <th onclick="sortTable('lastContact')" style="cursor: pointer;">
-                                Liên hệ gần nhất <i class="fas fa-sort" id="sort-lastContact"></i>
-                            </th>
-                            <th onclick="sortTable('nextContact')" style="cursor: pointer;">
-                                Ngày liên hệ tiếp <i class="fas fa-sort" id="sort-nextContact"></i>
-                            </th>
-                            <th>Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody id="customers-list">
-                          <tr>
-                            <tr>
-                                <td colspan="12" class="loading-cell">
-                                    <div class="loading">Đang tải...</div>
-                                </td>
-                            </tr>
-                          </tr>
-                      </tbody>
-                  </table>
-                </div>
-                
-                <!-- Pagination - GIỮ NGUYÊN -->
-                    <div class="pagination-container">
-                    <div class="pagination-info">
-                        <span>Hiển thị <span id="showing-from">1</span>-<span id="showing-to">10</span> trong tổng <span id="total-customers">0</span> học viên</span>
-                    </div>
-                    
-                    <div class="pagination-controls">
-                        <div class="items-per-page">
-                            <label for="items-per-page">Số dòng/trang:</label>
-                            <select id="items-per-page" class="form-control">
-                                <option value="10" selected>10</option>
-                                <option value="15">15</option>
-                                <option value="30">30</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
-                        
-                        <div class="pagination-buttons">
-                            <button class="btn btn-secondary btn-sm" id="prev-page" onclick="changePage(-1)">
-                                <i class="fas fa-chevron-left"></i> Trước
-                            </button>
-                            <span class="page-info">Trang <span id="current-page">1</span> / <span id="total-pages">1</span></span>
-                            <button class="btn btn-secondary btn-sm" id="next-page" onclick="changePage(1)">
-                                Sau <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Reports Section -->
             <div id="reports" class="content-section">
                 <div class="reports-filter-controls">
