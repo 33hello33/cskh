@@ -772,10 +772,10 @@ body.login-blur .container {
 }
 
 .overview-card {
-  background: white;
   border-radius: 12px;
   padding: 20px;
-  border: none;
+  border: 1px solid;
+  border-color: white;
   border-left: 5px solid var(--primary);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   display: flex;
@@ -1541,7 +1541,6 @@ body:not(.manager-user) .nav-tab[data-tab="settings"] {
 body{
     background:linear-gradient(135deg,#0f172a,#020617);
     font-family:Segoe UI,Arial;
-    color:#020617;
 }
 
 .player-card{
