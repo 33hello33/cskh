@@ -1929,7 +1929,7 @@ function switchTab(tabName) {
     });
 
     // Add active class to clicked tab and corresponding section
-    document.querySelector(`[data-parent-tab="${tabName}"]`).classList.add('active');
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     document.getElementById(tabName).classList.add('active');
 
     if (tabName === 'settings') {
