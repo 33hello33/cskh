@@ -2010,9 +2010,9 @@ async function renderAllDebt() {
                 <div class="top-item-info" style="display: flex; align-items: center; gap: 12px;">
                     <div class="top-item-rank" style="font-weight: bold; width: 25px; color: #666;">${index + 1}</div>
                     <div style="display: flex; flex-direction: column;">
-                        <span style="font-weight: bold; color: #333;">${item.tenhv}</span>
-                        <small style="color: #888;">Mã HV: ${item.mahv} | Lớp: ${item.tenlop}</small>
-                        <small style="color: #aaa; font-size: 10px;">HĐ: ${item.mahd}</small>
+                        <span style="font-weight: bold; ">${item.tenhv}</span>
+                        <small >Mã HV: ${item.mahv} | Lớp: ${item.tenlop}</small>
+                        <small style="font-size: 10px;">HĐ: ${item.mahd}</small>
                     </div>
                 </div>
                 <div class="top-item-count" style="font-weight: bold; color: #d32f2f; background: #fff5f5; padding: 4px 8px; border-radius: 4px;">
