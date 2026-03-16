@@ -184,7 +184,7 @@ body {
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: white;
+  background: linear-gradient(135deg,#0f172a,#020617);
   transition: all 0.3s ease;
   font-size: 14px;
   color: var(--text);
@@ -809,7 +809,6 @@ body.login-blur .container {
 }
 
 .chart-card {
-  background: white;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -909,7 +908,7 @@ body.login-blur .container {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.9);
+  background: #020617;
   padding: 6px 12px;
   border-radius: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -1542,7 +1541,7 @@ body:not(.manager-user) .nav-tab[data-tab="settings"] {
 body{
     background:linear-gradient(135deg,#0f172a,#020617);
     font-family:Segoe UI,Arial;
-    color:white;
+    color:#020617;
 }
 
 .player-card{
