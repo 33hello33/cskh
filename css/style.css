@@ -1825,7 +1825,7 @@ padding:18px;
     width:100%;
 }
 .player-left h1{
-    font-size:32px;
+    font-size:28px;
 }
 /* avatar mobile */
 .player-right img{
@@ -1837,5 +1837,13 @@ padding:18px;
 .hero-info{
     width:100%;
 }
+.match-stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
 
+.stat-box{
+    min-width:0;
+}
 }
