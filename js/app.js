@@ -1276,6 +1276,8 @@ async function renderTangtruongloinhuanChart() {
         const profitValues = Object.values(monthlyProfit);
 
         // 6. Vẽ biểu đồ
+        Chart.defaults.color = "#ffffff";
+        Chart.defaults.borderColor = "rgba(255,255,255,0.15)";
         window.tangtruongloinhuanChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -1373,6 +1375,8 @@ async function renderTangtruongdoanhthuChart() {
         const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim() || '#10B981';
 
         // 4. Khởi tạo biểu đồ
+        Chart.defaults.color = "#ffffff";
+        Chart.defaults.borderColor = "rgba(255,255,255,0.15)";
         window.tangtruongdoanhthuChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -1482,6 +1486,8 @@ async function renderCocaudoanhthulopChart() {
         const banHangValues = classLabels.map(cls => dataByClass[cls].banHang);
 
         // 5. Khởi tạo biểu đồ Stacked Bar Chart
+        Chart.defaults.color = "#ffffff";
+        Chart.defaults.borderColor = "rgba(255,255,255,0.15)";
         window.cocaudoanhthulopChart = new Chart(ctx, {
             type: 'bar', 
             data: {
@@ -1601,6 +1607,8 @@ async function renderThongkenolopChart() {
         const colors = generateChartColors(sourceNames.length);
 
         // 4. Khởi tạo biểu đồ cột
+        Chart.defaults.color = "#ffffff";
+        Chart.defaults.borderColor = "rgba(255,255,255,0.15)";
         window.thongkenolopChart = new Chart(ctx, {
             type: 'bar',
             // Đảm bảo bạn đã nhúng thư viện chartjs-plugin-datalabels
@@ -1711,6 +1719,8 @@ async function renderTangtruonghocvienChart() {
         const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4A6FDC';
 
         // 5. Khởi tạo Chart
+        Chart.defaults.color = "#ffffff";
+        Chart.defaults.borderColor = "rgba(255,255,255,0.15)";
         window.tangtruonghocvienChart = new Chart(ctx, {
             type: 'line',
             plugins: [ChartDataLabels],
@@ -1799,7 +1809,9 @@ async function renderSisotunglopChart() {
 
         // 3. Khởi tạo Chart
         const colors = generateChartColors(counts.length);
-
+        
+        Chart.defaults.color = "#ffffff";
+        Chart.defaults.borderColor = "rgba(255,255,255,0.15)";
         window.sisotunglopChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
