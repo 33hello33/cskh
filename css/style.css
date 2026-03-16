@@ -886,7 +886,7 @@ body.login-blur .container {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--primary);
+  background: white;
   color: white;
   display: flex;
   align-items: center;
